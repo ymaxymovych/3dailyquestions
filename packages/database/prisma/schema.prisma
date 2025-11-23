@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Core Entities ---
+
+model Organization {
+  id          String       @id @default(uuid())
+  name        String
+  timezone    String       @default("UTC")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  departments Department[]
+  users       User[]
+  projects    Project[]
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  
+  managerId String?
+  hrId      String?
+  
+  users     User[]
+  projects  Project[]
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  HR
+  ADMIN
+  OWNER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?  // Nullable for OAuth users initially
+  fullName     String
+  timezone     String   @default("UTC")
+  
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id])
+  
+  deptId       String?
+  department   Department? @relation(fields: [deptId], references: [id])
+  
+  roles        Role[]   @default([EMPLOYEE])
+  
+  // Soft Delete
+  deletedAt    DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  dailyReports DailyReport[]
+  activities   Activity[]
+  projectsOwned Project[]
+  helpRequestsAssigned HelpRequest[] @relation("HelpRequestsAssigned")
+}
+
+// --- Domain Entities ---
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  
+  deptId      String?
+  department  Department? @relation(fields: [deptId], references: [id])
+  
+  ownerId     String
+  owner       User @relation(fields: [ownerId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum ReportStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum HelpStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  OVERDUE
+}
+
+model DailyReport {
+  id          String   @id @default(uuid())
+  date        DateTime @db.Date
+  
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+  
+  // Block A: Yesterday (facts)
+  yesterdayBig    Json?  // [{ title, project?, status, timeboxH, artifact?, note? }]
+  yesterdayMedium Json?  // [{ title, project?, status, timeboxH, artifact? }]
+  yesterdaySmall  Json?  // { count: number } or { items: string[] }
+  yesterdayNote   String?
+  coveragePct     Int?   // Calculated: plan vs fact match %
+  
+  // Block B: Today (plan)
+  todayBig        Json?  // [{ title, project?, timeboxH, artifact? }]
+  todayMedium     Json?  // [{ title, project?, timeboxH, artifact? }]
+  todaySmall      Json?  // { count: number } or { items: string[] }
+  todayNote       String?
+  
+  // Block C: Help requests
+  helpRequests    HelpRequest[]
+  
+  // Block D: Mood
+  mood            Int?      // 1-5
+  wellbeing       String?   // ok/tired/stress/sick/other
+  moodComment     String?
+  
+  // Meta
+  status          ReportStatus @default(DRAFT)
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Keep Activity relation for future integrations
+  activities      Activity[]
+  
+  @@unique([userId, date])
+}
+
+model HelpRequest {
+  id          String   @id @default(uuid())
+  reportId    String
+  report      DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  text        String
+  assigneeId  String
+  assignee    User @relation("HelpRequestsAssigned", fields: [assigneeId], references: [id])
+  dueDate     DateTime
+  priority    Priority @default(MEDIUM)
+  status      HelpStatus @default(OPEN)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  source      String   // "yaware", "gmail", "manual"
+  externalId  String?  // Unique ID from provider
+  
+  userId      String
+  user        User @relation(fields: [userId], references: [id])
+
+  reportId    String?
+  report      DailyReport? @relation(fields: [reportId], references: [id])
+  
+  title       String?  // For manual activities
+  description String?
+  
+  startTime   DateTime? // Optional for manual
+  duration    Int?      // Seconds
+  
+  metadata    Json?     // { title: "...", url: "...", app: "..." }
+  
+  createdAt   DateTime @default(now())
+}
