@@ -12,8 +12,6 @@ import api from "@/lib/api";
 
 interface ProfileForm {
     fullName: string;
-    jobTitle: string;
-    department: string;
     bio: string;
     phone: string;
     roleDescription: string;
@@ -33,9 +31,7 @@ export function ProfileTab() {
             const { data } = await api.get("/user-admin/profile");
             if (data.profile) {
                 reset({
-                    fullName: data.profile.user?.fullName || "", // Assuming user relation is included or fetched separately
-                    jobTitle: data.profile.jobTitle || "",
-                    department: data.profile.department || "",
+                    fullName: data.profile.user?.fullName || "",
                     bio: data.profile.bio || "",
                     phone: data.profile.phone || "",
                     roleDescription: data.profile.roleDescription || "",
@@ -71,17 +67,6 @@ export function ProfileTab() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="jobTitle">Job Title</Label>
-                                <Input id="jobTitle" {...register("jobTitle")} placeholder="Software Engineer" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="department">Department</Label>
-                                <Input id="department" {...register("department")} placeholder="Engineering" />
-                            </div>
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone</Label>
                             <Input id="phone" {...register("phone")} placeholder="+380..." />

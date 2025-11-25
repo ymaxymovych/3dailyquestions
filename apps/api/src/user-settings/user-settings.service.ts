@@ -11,12 +11,29 @@ export class UserSettingsService {
 
     // --- Profile ---
     async getProfile(userId: string) {
-        const profile = await this.prisma.userProfile.findUnique({ where: { userId } });
+        // Get user with roleArchetype
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                roleArchetype: {
+                    include: {
+                        departmentArchetype: true,
+                        kpis: true,
+                    },
+                },
+            },
+        });
+
+        // Get or create profile
+        let profile = await this.prisma.userProfile.findUnique({ where: { userId } });
         if (!profile) {
-            // Create default if not exists
-            return this.prisma.userProfile.create({ data: { userId } });
+            profile = await this.prisma.userProfile.create({ data: { userId } });
         }
-        return profile;
+
+        return {
+            ...profile,
+            roleArchetype: user?.roleArchetype,
+        };
     }
 
     async updateProfile(userId: string, dto: UpdateProfileDto) {

@@ -11,6 +11,7 @@ import { getAllDepartments, DepartmentArchetype, RoleArchetype, KPITemplate } fr
 import { updateProfile } from "@/lib/user-settings";
 import { Loader2, Briefcase, Target } from "lucide-react";
 import api from "@/lib/api";
+import { toast } from "sonner";
 
 export function JobRoleTab() {
     const { user } = useAuth();
@@ -24,15 +25,31 @@ export function JobRoleTab() {
     const currentRole = availableRoles.find(r => r.code === selectedRole);
 
     useEffect(() => {
-        loadDepartments();
+        loadDepartmentsAndProfile();
     }, []);
 
-    const loadDepartments = async () => {
+    const loadDepartmentsAndProfile = async () => {
         try {
-            const data = await getAllDepartments();
-            setDepartments(data);
+            // Load departments
+            const depts = await getAllDepartments();
+            setDepartments(depts);
+
+            // Load user profile to get current role
+            const profileRes = await api.get('/user-settings/profile');
+            const profile = profileRes.data;
+
+            if (profile?.roleArchetype) {
+                const roleArchetype = profile.roleArchetype;
+                const deptCode = roleArchetype.departmentArchetype?.code;
+                const roleCode = roleArchetype.code;
+
+                if (deptCode && roleCode) {
+                    setSelectedDepartment(deptCode);
+                    setSelectedRole(roleCode);
+                }
+            }
         } catch (error) {
-            console.error("Failed to load departments:", error);
+            console.error("Failed to load departments or profile:", error);
         } finally {
             setLoading(false);
         }
@@ -48,11 +65,11 @@ export function JobRoleTab() {
                 await api.patch('/user-settings/role-archetype', {
                     roleArchetypeId: role.id
                 });
-                alert("Job role updated successfully!");
+                toast.success("Job role updated successfully!");
             }
         } catch (error) {
             console.error("Failed to update role:", error);
-            alert("Failed to update role");
+            toast.error("Failed to update role");
         } finally {
             setSaving(false);
         }
