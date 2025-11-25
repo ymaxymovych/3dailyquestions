@@ -121,6 +121,7 @@ export default function DailyReportPage() {
 
     getDailyReportByDate(reportDate)
       .then((res) => {
+        setValue('date', reportDate);     
         if (res.data) {
           setReportId(res.data.id);
           setReportStatus(res.data.status);
