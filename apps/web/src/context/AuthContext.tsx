@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -48,24 +48,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         initAuth();
     }, []);
 
-    const login = (token: string) => {
+    const login = useCallback((token: string) => {
         localStorage.setItem('token', token);
         // Refresh user data immediately
         api.get('/users/me').then(({ data }) => {
             setUser(data);
             router.push('/dashboard');
         });
-    };
+    }, [router]);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem('token');
         setUser(null);
         router.push('/login');
-    };
+    }, [router]);
 
     // Protect routes
     useEffect(() => {
-        const publicPaths = ['/login', '/register'];
+        const publicPaths = ['/login', '/register', '/auth/callback'];
         if (!isLoading && !user && !publicPaths.includes(pathname)) {
             router.push('/login');
         }

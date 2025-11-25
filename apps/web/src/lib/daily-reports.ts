@@ -8,6 +8,7 @@ export interface BigTask {
     artifact?: string;
     status?: 'done' | 'partial' | 'moved';
     note?: string;
+    tags?: string[];
 }
 
 export interface MediumTask {
@@ -16,6 +17,7 @@ export interface MediumTask {
     timeboxH: number; // 0.33-1
     artifact?: string;
     status?: 'done' | 'partial' | 'moved';
+    tags?: string[];
 }
 
 export interface SmallTasks {
@@ -26,6 +28,7 @@ export interface SmallTasks {
 export interface HelpRequest {
     id?: string;
     text: string;
+    link?: string;
     assigneeId?: string;
     dueDate: string;
     priority?: 'LOW' | 'MEDIUM' | 'HIGH';

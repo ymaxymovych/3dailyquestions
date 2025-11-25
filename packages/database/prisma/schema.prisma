@@ -10,31 +10,31 @@ datasource db {
 // --- Core Entities ---
 
 model Organization {
-  id          String       @id @default(uuid())
-  name        String
-  timezone    String       @default("UTC")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  
-  departments Department[]
-  users       User[]
-  projects    Project[]
+  id             String          @id @default(uuid())
+  name           String
+  timezone       String          @default("UTC")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  departments    Department[]
+  users          User[]
+  projects       Project[]
+  tags           Tag[]
+  kpiDefinitions KpiDefinition[]
 }
 
 model Department {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
   orgId     String
   org       Organization @relation(fields: [orgId], references: [id])
-  
   managerId String?
   hrId      String?
-  
   users     User[]
   projects  Project[]
 }
 
-enum Role {
+// Legacy Enum - Keeping for migration safety, but moving to Role model
+enum LegacyRole {
   EMPLOYEE
   MANAGER
   HR
@@ -42,24 +42,29 @@ enum Role {
   OWNER
 }
 
+enum Language {
+  UK
+  EN
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
-  passwordHash String?  // Nullable for OAuth users initially
+  googleId     String?  @unique
+  passwordHash String?
   fullName     String
   timezone     String   @default("UTC")
-  
+  language     Language @default(UK)
   orgId        String
   org          Organization @relation(fields: [orgId], references: [id])
-  
   deptId       String?
   department   Department? @relation(fields: [deptId], references: [id])
   
-  roles        Role[]   @default([EMPLOYEE])
+  // Roles & Access
+  roles        UserRole[]
   
   // Soft Delete
   deletedAt    DateTime?
-  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -68,28 +73,215 @@ model User {
   activities   Activity[]
   projectsOwned Project[]
   helpRequestsAssigned HelpRequest[] @relation("HelpRequestsAssigned")
+
+  // User Settings & Admin Module
+  profile         UserProfile?
+  preferences     UserPreferences?
+  integrations    Integration[]
+  kpis            UserKPI[]
+  workdaySettings WorkdaySettings?
+  artifacts       Artifact[]
+  userProjects    UserProject[]
 }
 
-// --- Domain Entities ---
+// --- Access Control (RBAC) ---
 
-model Project {
+model Role {
   id          String   @id @default(uuid())
-  name        String
+  name        String   @unique // e.g., "EMPLOYEE", "MANAGER", "ADMIN"
   description String?
-  status      ProjectStatus @default(ACTIVE)
+  scopes      String[] // e.g., ["team.read", "project.create"]
+  isSystem    Boolean  @default(false)
   
-  orgId       String
-  org         Organization @relation(fields: [orgId], references: [id])
-  
-  deptId      String?
-  department  Department? @relation(fields: [deptId], references: [id])
-  
-  ownerId     String
-  owner       User @relation(fields: [ownerId], references: [id])
+  users       UserRole[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  assignedBy String?
+  createdAt  DateTime @default(now())
+  
+  @@unique([userId, roleId])
+}
+
+model AccessLog {
+  id          String   @id @default(uuid())
+  requesterId String
+  targetId    String
+  reason      String
+  scopes      String[]
+  grantedAt   DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+// --- User Profile Layers ---
+
+model UserProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  jobTitle    String?
+  department  String?
+  bio         String?
+  avatarUrl   String?
+  phone       String?
+  
+  // New fields
+  resumeUrl       String?
+  roleDescription String?
+  
+  updatedAt   DateTime @updatedAt
+}
+
+model Artifact {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        ArtifactType
+  layer       ProfileLayer
+  
+  title       String
+  content     String?  // Text content or URL
+  metadata    Json?
+  
+  version     Int      @default(1)
+  isCurrent   Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  createdBy   String?
+}
+
+enum ArtifactType {
+  RESUME
+  JOB_DESCRIPTION
+  ROLE_DESCRIPTION
+  HATS_LIST
+  ONBOARDING_DOC
+  OTHER
+}
+
+enum ProfileLayer {
+  OFFICIAL
+  ACTUAL
+  INSTRUMENTAL
+}
+
+// --- Extended User Settings ---
+
+model WorkdaySettings {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  timezone     String   @default("Europe/Kyiv")
+  start        String   @default("09:00")
+  end          String   @default("18:00")
+  breakMinutes Int      @default(60)
+  workDays     Int[]    @default([1, 2, 3, 4, 5])
+  
+  updatedAt    DateTime @updatedAt
+}
+
+model UserPreferences {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language              Language @default(UK)
+  timezone              String   @default("Europe/Kyiv")
+  workDayStart          String   @default("09:00")
+  workDayEnd            String   @default("18:00")
+  isAutoBookFocus       Boolean  @default(false)
+  privacyAggregatedOnly Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+}
+
+// --- Integrations ---
+
+enum IntegrationType {
+  YAWARE
+  GMAIL
+  CALENDAR
+  JIRA
+}
+
+model Integration {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        IntegrationType
+  credentials Json?
+  settings    Json?
+  isEnabled   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([userId, type])
+}
+
+// --- KPI System ---
+
+enum KpiPeriod {
+  DAY
+  WEEK
+  MONTH
+}
+
+enum KpiSource {
+  MANUAL
+  INTEGRATION
+}
+
+enum KpiStatus {
+  ACTIVE
+  PENDING
+  ARCHIVED
+}
+
+model KpiDefinition {
+  id          String   @id @default(uuid())
+  name        String
+  unit        String
+  period      KpiPeriod @default(WEEK)
+  source      KpiSource @default(MANUAL)
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  
+  isSystem    Boolean  @default(false)
+  
+  assignments UserKPI[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserKPI {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  definitionId String
+  definition   KpiDefinition @relation(fields: [definitionId], references: [id])
+  
+  targetValue  Float
+  status       KpiStatus @default(ACTIVE)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// --- Project System ---
 
 enum ProjectStatus {
   DRAFT
@@ -97,6 +289,62 @@ enum ProjectStatus {
   PAUSED
   CLOSED
 }
+
+enum ProjectType {
+  ONGOING
+  ONE_TIME
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  type        ProjectType   @default(ONGOING)
+  
+  deadline    DateTime?
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  deptId      String?
+  department  Department? @relation(fields: [deptId], references: [id])
+  ownerId     String
+  owner       User @relation(fields: [ownerId], references: [id])
+  
+  userAssignments UserProject[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserProject {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  role        String?  // "Owner", "Member"
+  isPinned    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([userId, projectId])
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String
+  color       String   @default("#808080")
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([orgId, name])
+}
+
+// --- Daily Report ---
 
 enum ReportStatus {
   DRAFT
@@ -119,38 +367,31 @@ enum HelpStatus {
 model DailyReport {
   id          String   @id @default(uuid())
   date        DateTime @db.Date
-  
   userId      String
   user        User @relation(fields: [userId], references: [id])
   
-  // Block A: Yesterday (facts)
-  yesterdayBig    Json?  // [{ title, project?, status, timeboxH, artifact?, note? }]
-  yesterdayMedium Json?  // [{ title, project?, status, timeboxH, artifact? }]
-  yesterdaySmall  Json?  // { count: number } or { items: string[] }
+  yesterdayBig    Json?
+  yesterdayMedium Json?
+  yesterdaySmall  Json?
   yesterdayNote   String?
-  coveragePct     Int?   // Calculated: plan vs fact match %
+  coveragePct     Int?
   
-  // Block B: Today (plan)
-  todayBig        Json?  // [{ title, project?, timeboxH, artifact? }]
-  todayMedium     Json?  // [{ title, project?, timeboxH, artifact? }]
-  todaySmall      Json?  // { count: number } or { items: string[] }
+  todayBig        Json?
+  todayMedium     Json?
+  todaySmall      Json?
   todayNote       String?
   
-  // Block C: Help requests
   helpRequests    HelpRequest[]
   
-  // Block D: Mood
-  mood            Int?      // 1-5
-  wellbeing       String?   // ok/tired/stress/sick/other
+  mood            Int?
+  wellbeing       String?
   moodComment     String?
   
-  // Meta
   status          ReportStatus @default(DRAFT)
   publishedAt     DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
-  // Keep Activity relation for future integrations
   activities      Activity[]
   
   @@unique([userId, date])
@@ -160,36 +401,29 @@ model HelpRequest {
   id          String   @id @default(uuid())
   reportId    String
   report      DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  
   text        String
+  link        String?
   assigneeId  String
   assignee    User @relation("HelpRequestsAssigned", fields: [assigneeId], references: [id])
   dueDate     DateTime
   priority    Priority @default(MEDIUM)
   status      HelpStatus @default(OPEN)
-  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Activity {
   id          String   @id @default(uuid())
-  source      String   // "yaware", "gmail", "manual"
-  externalId  String?  // Unique ID from provider
-  
+  source      String
+  externalId  String?
   userId      String
   user        User @relation(fields: [userId], references: [id])
-
   reportId    String?
   report      DailyReport? @relation(fields: [reportId], references: [id])
-  
-  title       String?  // For manual activities
+  title       String?
   description String?
-  
-  startTime   DateTime? // Optional for manual
-  duration    Int?      // Seconds
-  
-  metadata    Json?     // { title: "...", url: "...", app: "..." }
-  
+  startTime   DateTime?
+  duration    Int?
+  metadata    Json?
   createdAt   DateTime @default(now())
 }

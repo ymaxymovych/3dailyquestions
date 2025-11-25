@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar'; // Re-use sidebar content for mobile
+import { ModeToggle } from '@/components/mode-toggle';
 
 export function Header() {
     const { user, logout } = useAuth();
@@ -34,11 +35,12 @@ export function Header() {
             <div className="w-full flex-1">
                 {/* Search or Title could go here */}
             </div>
+            <ModeToggle />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src="/avatars/01.png" alt={user?.fullName} />
+                            <AvatarImage src="https://github.com/shadcn.png" alt={user?.fullName} />
                             <AvatarFallback>{user?.fullName?.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </Button>
