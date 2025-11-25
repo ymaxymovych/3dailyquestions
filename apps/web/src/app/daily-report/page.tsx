@@ -25,17 +25,22 @@ import {
   type CreateDailyReportDto,
   type SmallTasks,
   type BigTask,
-  type MediumTask
+  type MediumTask,
+  type DailyReportKPI
 } from '@/lib/daily-reports';
 import { getProjects, type Project } from '@/lib/projects';
 import { getTags, type Tag } from '@/lib/tags';
 import { getCalendarEvents } from '@/lib/calendar';
+import { getProfile } from '@/lib/user-settings';
+import { getRoleByCode, KPITemplate } from '@/lib/role-archetypes';
+import { KPIInputSection } from '@/components/daily-report/KPIInputSection';
 
 interface DailyReportForm extends Omit<CreateDailyReportDto, 'yesterdaySmall' | 'todaySmall'> {
   yesterdaySmall?: SmallTasks;
   todaySmall?: SmallTasks;
   yesterdaySmallText?: string;
   todaySmallText?: string;
+  kpis?: DailyReportKPI[];
   // Removed structured metrics, using yesterdayNote and todayNote directly
 }
 
@@ -54,6 +59,7 @@ export default function DailyReportPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [kpiDefinitions, setKpiDefinitions] = useState<KPITemplate[]>([]);
 
   // Ref to track the last saved state for dirty checking
   const lastSavedJson = useRef<string>('');
@@ -71,6 +77,7 @@ export default function DailyReportPage() {
       todayNote: '', // Metrics Plan
       helpRequests: [],
       mood: 3,
+      kpis: [],
     },
   });
 
@@ -89,6 +96,18 @@ export default function DailyReportPage() {
 
   useEffect(() => {
     if (!user) return;
+
+    // Load KPI definitions based on user's role
+    getProfile().then(async (profile) => {
+      if (profile.roleArchetype?.code) {
+        try {
+          const roleData = await getRoleByCode(profile.roleArchetype.code);
+          setKpiDefinitions(roleData.kpis || []);
+        } catch (e) {
+          console.error("Failed to load role KPIs", e);
+        }
+      }
+    });
 
     // Load projects and tags
     Promise.all([getProjects(), getTags()])
@@ -124,6 +143,7 @@ export default function DailyReportPage() {
           setValue('wellbeing', res.data.wellbeing);
 
           setValue('helpRequests', res.data.helpRequests || []);
+          setValue('kpis', res.data.kpis || []);
 
           // Initialize lastSavedJson with the fetched data
           setTimeout(() => {
@@ -146,6 +166,7 @@ export default function DailyReportPage() {
           setValue('mood', 3);
           setValue('wellbeing', '');
           setValue('helpRequests', []);
+          setValue('kpis', res.data.kpis || []); // Pre-filled from backend
 
           setTimeout(() => {
             lastSavedJson.current = JSON.stringify(getValues());
@@ -169,6 +190,7 @@ export default function DailyReportPage() {
             items: data.todaySmallText?.split('\n').filter(line => line.trim() !== '') || []
           },
           helpRequests: data.helpRequests?.filter(req => req.text && req.text.trim() !== '') || [],
+          kpis: data.kpis, // Pass KPIs
         };
 
         delete (dto as any).yesterdaySmallText;
@@ -444,7 +466,7 @@ export default function DailyReportPage() {
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Yesterday's Report */}
-          <Card className="bg-blue-50/50 border-blue-100 shadow-sm">
+          <Card className="bg-blue-50 border-blue-100 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-blue-900">A. Що я зробив учора</CardTitle>
             </CardHeader>
@@ -496,17 +518,26 @@ export default function DailyReportPage() {
               {/* Metrics Fact */}
               <div className="space-y-2 pt-2 border-t border-blue-200">
                 <Label className="text-blue-800 font-semibold">Метрики / KPI (Факт)</Label>
+
+                {/* KPI Input Section */}
+                <KPIInputSection
+                  kpis={formData.kpis || []}
+                  definitions={kpiDefinitions}
+                  type="fact"
+                  onChange={(newKpis) => setValue('kpis', newKpis)}
+                />
+
                 <Textarea
                   {...register('yesterdayNote')}
-                  placeholder="Наприклад:&#10;Дзвінків: 15&#10;Лідів: 3"
-                  className="min-h-[60px] bg-white/50 border-blue-200 focus:border-blue-400"
+                  placeholder="Додаткові досягнення..."
+                  className="min-h-[60px] bg-white/50 border-blue-200 focus:border-blue-400 mt-2"
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Today's Plan */}
-          <Card className="bg-green-50/50 border-green-100 shadow-sm">
+          <Card className="bg-green-50 border-green-100 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-green-900">B. План на сьогодні</CardTitle>
               <Button variant="outline" size="sm" onClick={handleSyncCalendar} disabled={isSyncing} className="h-7 bg-white/50 border-green-200 hover:bg-green-100">
@@ -562,10 +593,19 @@ export default function DailyReportPage() {
               {/* Metrics Plan */}
               <div className="space-y-2 pt-2 border-t border-green-200">
                 <Label className="text-green-800 font-semibold">Метрики / KPI (План)</Label>
+
+                {/* KPI Input Section - reusing same KPIs array but editing 'goal' field */}
+                <KPIInputSection
+                  kpis={formData.kpis || []}
+                  definitions={kpiDefinitions}
+                  type="plan"
+                  onChange={(newKpis) => setValue('kpis', newKpis)}
+                />
+
                 <Textarea
                   {...register('todayNote')}
-                  placeholder="Наприклад:&#10;План дзвінків: 20"
-                  className="min-h-[60px] bg-white/50 border-green-200 focus:border-green-400"
+                  placeholder="Додаткові цілі..."
+                  className="min-h-[60px] bg-white/50 border-green-200 focus:border-green-400 mt-2"
                 />
               </div>
             </CardContent>
@@ -573,7 +613,7 @@ export default function DailyReportPage() {
         </div>
 
         {/* Wellbeing Card */}
-        <Card className="bg-purple-50/50 border-purple-100 shadow-sm">
+        <Card className="bg-purple-50 border-purple-100 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-purple-900">C. Самопочуття та Блокери</CardTitle>
           </CardHeader>
@@ -617,7 +657,7 @@ export default function DailyReportPage() {
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2 text-purple-600 hover:text-purple-700 hover:bg-purple-100"
-                  onClick={() => setValue('helpRequests', [...(formData.helpRequests || []), { text: '', context: '' }])}
+                  onClick={() => setValue('helpRequests', [...(formData.helpRequests || []), { text: '', dueDate: new Date().toISOString().split('T')[0] }])}
                 >
                   <Plus className="h-3 w-3 mr-1" />
                   Додати

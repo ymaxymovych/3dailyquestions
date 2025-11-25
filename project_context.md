@@ -365,33 +365,6 @@ Each tab is a standalone component that:
 - `apps/web/src/lib/daily-reports.ts`
 - `packages/database/tsconfig.json`
 
----
-
-## TODO
-
-### High Priority
-- [ ] Fix tab switching issue for Projects and Tags tabs
-- [ ] Verify all tabs are functional (Profile, Workday, KPIs, Roles, Access, Integrations, Projects, Tags)
-- [ ] Test authentication flow end-to-end (registration, login, Google OAuth)
-- [ ] Seed initial system roles (Employee, Manager, Owner, Admin)
-
-### Medium Priority
-- [ ] Create walkthrough.md documenting completed work
-- [ ] Test Daily Report KPI pre-filling functionality
-- [ ] Verify RBAC permissions guard is working correctly
-- [ ] Check if AccessLog endpoints are functional
-
-### Low Priority
-- [ ] Investigate and fix `File '@repo/typescript-config/base.json' not found` lint error
-- [ ] Consider adding Projects sub-pages cleanup (old `/settings/projects/page.tsx`)
-- [ ] Consider adding Tags sub-pages cleanup (old `/settings/tags/page.tsx`)
-- [ ] Add loading skeletons to tab components
-- [ ] Add empty state illustrations
-
----
-
-## QUESTIONS
-
 ### For User
 1. **Tab Switching**: Should I investigate the Projects/Tags tab switching issue immediately, or is there other work to prioritize?
 2. **Old Sub-Pages**: Should I delete the old `/settings/general/page.tsx`, `/settings/routine/page.tsx`, etc. since they're now replaced by tabs?

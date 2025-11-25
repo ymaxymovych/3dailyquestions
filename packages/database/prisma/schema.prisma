@@ -63,6 +63,10 @@ model User {
   // Roles & Access
   roles        UserRole[]
   
+  // Work Role Archetype (job function, not access control)
+  roleArchetypeId String?
+  roleArchetype   RoleArchetype? @relation("UserRoleArchetype", fields: [roleArchetypeId], references: [id])
+  
   // Soft Delete
   deletedAt    DateTime?
   createdAt    DateTime @default(now())
@@ -393,8 +397,25 @@ model DailyReport {
   updatedAt       DateTime @updatedAt
   
   activities      Activity[]
+  kpis            DailyReportKPI[]
   
   @@unique([userId, date])
+}
+
+model DailyReportKPI {
+  id          String      @id @default(uuid())
+  reportId    String
+  report      DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  kpiCode     String      // Code from KPITemplate (e.g. "CALLS_MADE")
+  value       Float       // Actual value
+  goal        Float?      // Planned value (optional)
+  comment     String?     // Optional comment
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([reportId, kpiCode])
 }
 
 model HelpRequest {
@@ -426,4 +447,81 @@ model Activity {
   duration    Int?
   metadata    Json?
   createdAt   DateTime @default(now())
+}
+
+// --- Role Archetypes System (Job Roles, not Access Control) ---
+// This is separate from the RBAC Role model above.
+// These are work roles like "SDR", "Product Manager", "DevOps" etc.
+
+enum RoleLevel {
+  IC          // Individual Contributor
+  TEAMLEAD    // Team Lead
+  HEAD        // Head of Department
+  CLEVEL      // C-Level (CTO, CMO, etc)
+}
+
+enum KPIDirection {
+  HIGHER_BETTER    // більше краще
+  LOWER_BETTER     // менше краще
+  TARGET_VALUE     // цільове значення
+}
+
+enum KPIFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+// Department Archetype (not the org department, but the functional area template)
+model DepartmentArchetype {
+  id          String   @id @default(uuid())
+  code        String   @unique // SALES, MKT, PRODENG, CS, OPS
+  name        String   // "Продажі", "Маркетинг"
+  description String?
+  
+  roles       RoleArchetype[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("department_archetypes")
+}
+
+// Role Archetype (SDR, AE, PM, DevOps, etc)
+model RoleArchetype {
+  id                  String   @id @default(uuid())
+  code                String   @unique // SALES_SDR, ENG_DEV, etc
+  name                String   // "SDR / Лідогенератор"
+  level               RoleLevel
+  description         String?
+  
+  departmentArchetypeId String
+  departmentArchetype   DepartmentArchetype @relation(fields: [departmentArchetypeId], references: [id])
+  
+  kpis                KPITemplate[]
+  users               User[] @relation("UserRoleArchetype")
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  @@map("role_archetypes")
+}
+
+// KPI Template (template for a specific role archetype)
+model KPITemplate {
+  id                String   @id @default(uuid())
+  code              String   @unique // LEADS_CREATED_DAILY, WIN_RATE, etc
+  name              String   // "Нові ліди за день"
+  description       String?
+  unit              String   // "кількість", "грн", "%", etc
+  direction         KPIDirection
+  frequency         KPIFrequency @default(WEEKLY)
+  
+  roleArchetypeId   String
+  roleArchetype     RoleArchetype @relation(fields: [roleArchetypeId], references: [id])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("kpi_templates")
 }

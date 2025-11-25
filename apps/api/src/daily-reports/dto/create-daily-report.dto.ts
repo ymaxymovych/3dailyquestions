@@ -161,4 +161,27 @@ export class CreateDailyReportDto {
   @IsString()
   @IsOptional()
   moodComment?: string;
+
+  // KPIs
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DailyReportKPIDto)
+  @IsOptional()
+  kpis?: DailyReportKPIDto[];
+}
+
+export class DailyReportKPIDto {
+  @IsString()
+  kpiCode: string;
+
+  @IsNumber()
+  value: number;
+
+  @IsNumber()
+  @IsOptional()
+  goal?: number;
+
+  @IsString()
+  @IsOptional()
+  comment?: string;
 }

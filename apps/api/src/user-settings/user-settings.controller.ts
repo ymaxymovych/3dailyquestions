@@ -45,6 +45,12 @@ export class UserSettingsController {
         return this.settingsService.updateIntegration(req.user.userId, dto);
     }
 
+    // --- Role Archetype ---
+    @Patch('role-archetype')
+    updateRoleArchetype(@Request() req: any, @Body() dto: { roleArchetypeId: string | null }) {
+        return this.settingsService.updateRoleArchetype(req.user.userId, dto.roleArchetypeId);
+    }
+
     // --- KPIs ---
     // Legacy KPI endpoints removed. Use KpiController from user-admin module.
 }

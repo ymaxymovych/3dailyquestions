@@ -9,10 +9,10 @@ import { ProjectsModule } from './projects/projects.module';
 import { TagsModule } from './tags/tags.module';
 import { CalendarModule } from './integrations/calendar/calendar.module';
 import { UserSettingsModule } from './user-settings/user-settings.module';
+import { UserAdminModule } from './user-admin/user-admin.module';
+import { RoleArchetypesModule } from './role-archetypes/role-archetypes.module';
 
 import { ConfigModule } from '@nestjs/config';
-
-import { UserAdminModule } from './user-admin/user-admin.module';
 
 @Module({
   imports: [
@@ -26,6 +26,7 @@ import { UserAdminModule } from './user-admin/user-admin.module';
     CalendarModule,
     UserSettingsModule,
     UserAdminModule,
+    RoleArchetypesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

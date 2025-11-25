@@ -6,6 +6,7 @@ import { ProfileTab } from "@/components/settings/ProfileTab";
 import { KPITab } from "@/components/settings/KPITab";
 import { WorkdayTab } from "@/components/settings/WorkdayTab";
 import { RolesTab } from "@/components/settings/RolesTab";
+import { JobRoleTab } from "@/components/settings/JobRoleTab";
 import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { AccessTab } from "@/components/settings/AccessTab";
 
@@ -29,6 +30,7 @@ export default function SettingsPage() {
             <Tabs defaultValue="profile" className="space-y-4">
                 <TabsList className="flex-wrap h-auto">
                     <TabsTrigger value="profile">Profile</TabsTrigger>
+                    <TabsTrigger value="job-role">Job Role</TabsTrigger>
                     <TabsTrigger value="workday">Workday</TabsTrigger>
                     <TabsTrigger value="projects">Projects</TabsTrigger>
                     <TabsTrigger value="tags">Tags</TabsTrigger>
@@ -40,6 +42,10 @@ export default function SettingsPage() {
 
                 <TabsContent value="profile" className="space-y-4">
                     <ProfileTab />
+                </TabsContent>
+
+                <TabsContent value="job-role" className="space-y-4">
+                    <JobRoleTab />
                 </TabsContent>
 
                 <TabsContent value="workday" className="space-y-4">

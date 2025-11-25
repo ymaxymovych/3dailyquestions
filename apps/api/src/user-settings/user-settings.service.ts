@@ -72,6 +72,22 @@ export class UserSettingsService {
         });
     }
 
+    // --- Role Archetype ---
+    async updateRoleArchetype(userId: string, roleArchetypeId: string | null) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { roleArchetypeId },
+            include: {
+                roleArchetype: {
+                    include: {
+                        departmentArchetype: true,
+                        kpis: true,
+                    },
+                },
+            },
+        });
+    }
+
     // --- KPIs ---
     // Legacy KPI methods removed. Use KpiService from user-admin module.
 }

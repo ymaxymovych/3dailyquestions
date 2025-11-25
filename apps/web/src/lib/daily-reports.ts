@@ -61,11 +61,22 @@ export interface DailyReport {
     wellbeing?: string;
     moodComment?: string;
 
+    // KPIs
+    kpis?: DailyReportKPI[];
+
     // Meta
     status: 'DRAFT' | 'PUBLISHED';
     publishedAt?: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface DailyReportKPI {
+    id?: string;
+    kpiCode: string;
+    value: number;
+    goal?: number;
+    comment?: string;
 }
 
 export interface CreateDailyReportDto {
@@ -79,6 +90,7 @@ export interface CreateDailyReportDto {
     todaySmall?: SmallTasks;
     todayNote?: string;
     helpRequests?: Omit<HelpRequest, 'id' | 'status'>[];
+    kpis?: Omit<DailyReportKPI, 'id'>[];
     mood?: number;
     wellbeing?: string;
     moodComment?: string;

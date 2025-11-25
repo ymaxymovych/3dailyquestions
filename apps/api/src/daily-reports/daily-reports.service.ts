@@ -60,12 +60,20 @@ export class DailyReportsService {
             text: hr.text,
             link: hr.link,
             assigneeId: hr.assigneeId || managerId,
-            dueDate: hr.dueDate ? new Date(hr.dueDate) : new Date(Date.now() + 86400000), // Default to tomorrow
+            dueDate: hr.dueDate ? new Date(hr.dueDate) : new Date(Date.now() + 86400000),
             priority: hr.priority || 'MEDIUM',
           })) || [],
         },
+        kpis: {
+          create: dto.kpis?.map((k) => ({
+            kpiCode: k.kpiCode,
+            value: k.value,
+            goal: k.goal,
+            comment: k.comment,
+          })) || [],
+        },
       },
-      include: { helpRequests: true },
+      include: { helpRequests: true, kpis: true },
     });
   }
 
@@ -73,14 +81,17 @@ export class DailyReportsService {
     return this.prisma.dailyReport.findMany({
       where: { userId },
       orderBy: { date: 'desc' },
-      include: { helpRequests: true },
+      include: { helpRequests: true, kpis: true },
     });
   }
 
   async findOne(userId: string, id: string) {
     const report = await this.prisma.dailyReport.findUnique({
       where: { id },
-      include: { helpRequests: { include: { assignee: true } } },
+      include: {
+        helpRequests: { include: { assignee: true } },
+        kpis: true
+      },
     });
 
     if (!report || report.userId !== userId) {
@@ -93,16 +104,37 @@ export class DailyReportsService {
   async findByDate(userId: string, date: string) {
     const report = await this.prisma.dailyReport.findUnique({
       where: { userId_date: { userId, date: new Date(date) } },
-      include: { helpRequests: { include: { assignee: true } } },
+      include: {
+        helpRequests: { include: { assignee: true } },
+        kpis: true
+      },
     });
 
     // If report doesn't exist, we can return a "virtual" draft with defaults
     if (!report) {
       // Fetch defaults
-      const kpis = await this.kpiService.getUserKpis(userId);
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          roleArchetype: {
+            include: { kpis: true }
+          }
+        }
+      });
+
+      // Pre-fill KPIs from Role Archetype
+      const defaultKpis = user?.roleArchetype?.kpis.map(k => ({
+        kpiCode: k.code,
+        value: 0,
+        goal: null,
+        comment: null
+      })) || [];
+
+      // Legacy KPI support (optional, can be removed if fully switched)
+      const legacyKpis = await this.kpiService.getUserKpis(userId);
       let defaultTodayNote = '';
-      if (kpis.length > 0) {
-        defaultTodayNote = "KPI Targets:\n" + kpis.map(k => `- ${k.definition.name}: ${k.targetValue} ${k.definition.unit}`).join('\n');
+      if (legacyKpis.length > 0) {
+        defaultTodayNote = "KPI Targets:\n" + legacyKpis.map(k => `- ${k.definition.name}: ${k.targetValue} ${k.definition.unit}`).join('\n');
       }
 
       return {
@@ -110,6 +142,7 @@ export class DailyReportsService {
         date: new Date(date),
         status: 'DRAFT',
         todayNote: defaultTodayNote,
+        kpis: defaultKpis,
         // ... other defaults
       };
     }
@@ -123,6 +156,13 @@ export class DailyReportsService {
     // Delete existing help requests and create new ones
     if (dto.helpRequests) {
       await this.prisma.helpRequest.deleteMany({
+        where: { reportId: id },
+      });
+    }
+
+    // Delete existing KPIs and create new ones
+    if (dto.kpis) {
+      await this.prisma.dailyReportKPI.deleteMany({
         where: { reportId: id },
       });
     }
@@ -154,13 +194,23 @@ export class DailyReportsService {
               text: hr.text,
               link: hr.link,
               assigneeId: hr.assigneeId || managerId,
-              dueDate: hr.dueDate ? new Date(hr.dueDate) : new Date(Date.now() + 86400000), // Default to tomorrow
+              dueDate: hr.dueDate ? new Date(hr.dueDate) : new Date(Date.now() + 86400000),
               priority: hr.priority || 'MEDIUM',
             })),
           },
         }),
+        ...(dto.kpis && {
+          kpis: {
+            create: dto.kpis.map((k) => ({
+              kpiCode: k.kpiCode,
+              value: k.value,
+              goal: k.goal,
+              comment: k.comment,
+            })),
+          },
+        }),
       },
-      include: { helpRequests: true },
+      include: { helpRequests: true, kpis: true },
     });
   }
 
