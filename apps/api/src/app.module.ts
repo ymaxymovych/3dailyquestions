@@ -11,6 +11,7 @@ import { CalendarModule } from './integrations/calendar/calendar.module';
 import { UserSettingsModule } from './user-settings/user-settings.module';
 import { UserAdminModule } from './user-admin/user-admin.module';
 import { RoleArchetypesModule } from './role-archetypes/role-archetypes.module';
+import { ManagerDashboardModule } from './manager-dashboard/manager-dashboard.module';
 
 import { ConfigModule } from '@nestjs/config';
 
@@ -27,6 +28,7 @@ import { ConfigModule } from '@nestjs/config';
     UserSettingsModule,
     UserAdminModule,
     RoleArchetypesModule,
+    ManagerDashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
