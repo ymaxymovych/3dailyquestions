@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { YawareService } from '../integrations/yaware/yaware.service';
+import { format, differenceInMinutes } from 'date-fns';
 
 export interface CalendarBlock {
     start: string;
@@ -21,50 +24,54 @@ export interface IntegrationsSnapshot {
 
 @Injectable()
 export class IntegrationsSnapshotService {
+    constructor(
+        private prisma: PrismaService,
+        private yawareService: YawareService,
+    ) { }
+
     /**
      * Get integrations snapshot for a user on a specific date
-     * Currently uses mock data - will be replaced with real integrations
+     * Uses real Yaware API (or mock fallback) and mock Calendar data
      */
-    async getSnapshot(userId: string, date: Date): Promise<IntegrationsSnapshot | null> {
-        // Mock data for demonstration
-        // In production, this would call Google Calendar and Yaware APIs
+    async getSnapshot(userId: string, date: Date): Promise<IntegrationsSnapshot> {
+        // Get Calendar data (mock for now)
+        const calendarData = this.getCalendarFocusTime(userId);
 
-        const mockCalendarBlocks = this.getMockCalendarBlocks(userId, date);
-        const mockYawareData = this.getMockYawareData(userId, date);
+        // Get Yaware data (real API or mock fallback)
+        const yawareData = await this.getYawareFocusTime(userId, date);
 
-        const plannedFocusMinutes = mockCalendarBlocks.reduce(
-            (sum, block) => sum + block.durationMinutes,
-            0
-        );
-
-        const focusTimeMinutes = mockYawareData.focusTimeMinutes;
-        const focusTimeDelta = focusTimeMinutes - plannedFocusMinutes;
-        const focusTimePercentage = plannedFocusMinutes > 0
-            ? Math.round((focusTimeMinutes / plannedFocusMinutes) * 100)
-            : 0;
+        // Calculate plan vs fact
+        const plannedFocusMinutes = calendarData.plannedFocusMinutes;
+        const actualFocusMinutes = yawareData.focusTimeMinutes;
+        const focusTimeDelta = actualFocusMinutes - plannedFocusMinutes;
+        const focusTimePercentage =
+            plannedFocusMinutes > 0
+                ? Math.round((actualFocusMinutes / plannedFocusMinutes) * 100)
+                : 0;
 
         return {
-            focusTimeMinutes,
+            focusTimeMinutes: actualFocusMinutes,
             plannedFocusMinutes,
             focusTimeDelta,
             focusTimePercentage,
-            calendarBlocks: mockCalendarBlocks,
-            yawareData: mockYawareData,
+            calendarBlocks: calendarData.calendarBlocks,
+            yawareData: {
+                productiveTimeMinutes: yawareData.productiveTimeMinutes,
+                focusTimeMinutes: yawareData.focusTimeMinutes,
+            },
         };
     }
 
     /**
-     * Mock Google Calendar data
+     * Get Calendar focus time data (mock)
      * TODO: Replace with real Google Calendar API integration
      */
-    private getMockCalendarBlocks(userId: string, date: Date): CalendarBlock[] {
-        // Generate different mock data based on userId hash for variety
-        const userHash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const variant = userHash % 3;
+    private getCalendarFocusTime(userId: string) {
+        const variant = this.getUserVariant(userId);
 
-        if (variant === 0) {
+        const mockCalendarBlocks: CalendarBlock[][] = [
             // Good planner - has focus blocks
-            return [
+            [
                 {
                     start: '09:30',
                     end: '11:00',
@@ -77,60 +84,49 @@ export class IntegrationsSnapshotService {
                     title: 'Focus: Code Review & Development',
                     durationMinutes: 120,
                 },
-            ];
-        } else if (variant === 1) {
+            ],
             // Moderate planner - some focus blocks
-            return [
+            [
                 {
                     start: '10:00',
                     end: '12:00',
                     title: 'Focus: Project Work',
                     durationMinutes: 120,
                 },
-            ];
-        } else {
+            ],
             // No focus blocks scheduled
-            return [];
-        }
+            [],
+        ];
+
+        const calendarBlocks = mockCalendarBlocks[variant % mockCalendarBlocks.length];
+        const plannedFocusMinutes = calendarBlocks.reduce(
+            (sum, block) => sum + block.durationMinutes,
+            0,
+        );
+
+        return {
+            plannedFocusMinutes,
+            calendarBlocks,
+        };
     }
 
     /**
-     * Mock Yaware data
-     * TODO: Replace with real Yaware API integration
+     * Get Yaware focus time data (real API or mock fallback)
      */
-    private getMockYawareData(userId: string, date: Date): {
-        productiveTimeMinutes: number;
-        focusTimeMinutes: number;
-    } {
-        // Generate different mock data based on userId hash
-        const userHash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const variant = userHash % 4;
+    private async getYawareFocusTime(userId: string, date: Date) {
+        // For now, use userId as yawareUserId (will be replaced with actual mapping)
+        const yawareUserId = userId;
 
-        if (variant === 0) {
-            // Good focus time (meets plan)
-            return {
-                productiveTimeMinutes: 420, // 7h
-                focusTimeMinutes: 200, // 3h 20m
-            };
-        } else if (variant === 1) {
-            // Slightly underfocused (75% of plan)
-            return {
-                productiveTimeMinutes: 360, // 6h
-                focusTimeMinutes: 90, // 1h 30m
-            };
-        } else if (variant === 2) {
-            // Significantly underfocused (50% of plan)
-            return {
-                productiveTimeMinutes: 300, // 5h
-                focusTimeMinutes: 60, // 1h
-            };
-        } else {
-            // Exceeds plan
-            return {
-                productiveTimeMinutes: 480, // 8h
-                focusTimeMinutes: 250, // 4h 10m
-            };
-        }
+        // Fetch productivity data from Yaware API (or mock data)
+        const productivityData = await this.yawareService.getEmployeeProductivity(
+            yawareUserId,
+            date,
+        );
+
+        return {
+            focusTimeMinutes: productivityData.focusTimeMinutes,
+            productiveTimeMinutes: productivityData.productiveTimeMinutes,
+        };
     }
 
     /**
@@ -143,5 +139,12 @@ export class IntegrationsSnapshotService {
         }
 
         return snapshot.focusTimePercentage < 70;
+    }
+
+    /**
+     * Generate consistent variant for user
+     */
+    private getUserVariant(userId: string): number {
+        return userId.charCodeAt(0) % 3;
     }
 }
