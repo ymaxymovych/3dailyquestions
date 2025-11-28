@@ -289,4 +289,41 @@ export class DepartmentsService {
             orderBy: { fullName: 'asc' }
         });
     }
+
+    /**
+     * Remove user from department
+     */
+    async removeUser(departmentId: string, orgId: string, userId: string) {
+        // Verify department belongs to org
+        const dept = await this.prisma.department.findFirst({
+            where: { id: departmentId, orgId }
+        });
+
+        if (!dept) {
+            throw new NotFoundException('Department not found');
+        }
+
+        // Verify user belongs to this department
+        const user = await this.prisma.user.findFirst({
+            where: { id: userId, deptId: departmentId, orgId }
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found in this department');
+        }
+
+        // Remove user from department
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                deptId: null
+            },
+            select: {
+                id: true,
+                email: true,
+                fullName: true,
+                deptId: true
+            }
+        });
+    }
 }

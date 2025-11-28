@@ -8,6 +8,7 @@ import { LayoutDashboard, FileText, Settings, FolderKanban, Tags, Users } from '
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/manager', label: 'Manager Dashboard', icon: Users },
+    { href: '/admin/team', label: 'Team', icon: Users },
     { href: '/daily-report', label: 'Daily Reports', icon: FileText },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];

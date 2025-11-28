@@ -81,4 +81,16 @@ export class DepartmentsController {
     ) {
         return this.departmentsService.assignUser(departmentId, req.user.orgId, dto);
     }
+
+    /**
+     * Remove user from department
+     */
+    @Delete(':id/users/:userId')
+    removeUser(
+        @Param('id') departmentId: string,
+        @Param('userId') userId: string,
+        @Request() req: any
+    ) {
+        return this.departmentsService.removeUser(departmentId, req.user.orgId, userId);
+    }
 }

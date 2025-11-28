@@ -11,8 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Plus, Edit, Trash2, Users, Loader2, UserPlus, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 // Types
 interface DepartmentArchetype {
@@ -122,6 +124,9 @@ export default function DepartmentsPage() {
         fetchData();
     }, []);
 
+    // Calculate unassigned employees
+    const unassignedCount = users.filter(u => !u.deptId).length;
+
     // Handlers
     const handleCreateOpen = () => {
         setCreateStep(1);
@@ -224,6 +229,22 @@ export default function DepartmentsPage() {
                 </Button>
             </div>
 
+            {/* Unassigned Employees Alert */}
+            {unassignedCount > 0 && (
+                <Alert className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+                    <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <AlertTitle className="text-amber-900 dark:text-amber-100">
+                        Unassigned Employees
+                    </AlertTitle>
+                    <AlertDescription className="text-amber-800 dark:text-amber-200">
+                        {unassignedCount} {unassignedCount === 1 ? 'employee is' : 'employees are'} not assigned to any department.
+                        <Link href="/admin/team?filter=unassigned" className="ml-2 underline font-medium">
+                            View and assign →
+                        </Link>
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <Card>
                 <CardContent className="p-0">
                     <Table>
@@ -247,7 +268,12 @@ export default function DepartmentsPage() {
                                     <TableRow key={dept.id}>
                                         <TableCell className="font-medium">
                                             <div className="flex flex-col">
-                                                <span>{dept.name}</span>
+                                                <Link
+                                                    href={`/admin/departments/${dept.id}`}
+                                                    className="hover:underline text-primary"
+                                                >
+                                                    {dept.name}
+                                                </Link>
                                                 {dept.archetype && (
                                                     <span className="text-xs text-muted-foreground">
                                                         {dept.archetype.description}
