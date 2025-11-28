@@ -15,12 +15,16 @@ import { ManagerDashboardModule } from './manager-dashboard/manager-dashboard.mo
 import { HealthModule } from './health/health.module';
 import { OrganizationModule } from './organization/organization.module';
 import { SeederModule } from './seeder/seeder.module';
+import { CommonModule } from './common/common.module';
+import { YawareModule } from './integrations/yaware/yaware.module';
+import { DepartmentsModule } from './departments/departments.module';
 
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CommonModule,
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -35,6 +39,8 @@ import { ConfigModule } from '@nestjs/config';
     HealthModule,
     OrganizationModule,
     SeederModule,
+    YawareModule,
+    DepartmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

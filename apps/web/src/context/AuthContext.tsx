@@ -5,11 +5,12 @@ import api from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface User {
-    id: string;
+    userId: string;
     email: string;
     fullName: string;
     orgId: string;
     roles: string[];
+    status?: 'ACTIVE' | 'PENDING' | 'BLOCKED';
 }
 
 interface AuthContextType {
@@ -77,10 +78,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Protect routes
     useEffect(() => {
-        const publicPaths = ['/login', '/register', '/auth/callback', '/onboarding'];
+        const publicPaths = ['/login', '/register', '/auth/callback', '/onboarding', '/pending-approval'];
         if (!isLoading) {
             if (!user && !publicPaths.includes(pathname)) {
                 router.push('/login');
+            } else if (user && user.status === 'PENDING' && pathname !== '/pending-approval') {
+                router.push('/pending-approval');
             } else if (user && !user.orgId && pathname !== '/onboarding') {
                 router.push('/onboarding');
             } else if (user && user.orgId && pathname === '/onboarding') {

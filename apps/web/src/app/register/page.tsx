@@ -99,7 +99,17 @@ export default function RegisterPage() {
             }
 
             const { data } = await api.post('/auth/register', payload);
-            login(data.access_token);
+
+            // Check if user is pending approval
+            if (data.status === 'PENDING') {
+                // Store token but don't auto-login
+                localStorage.setItem('token', data.access_token);
+                // Redirect to pending approval page
+                window.location.href = '/pending-approval';
+            } else {
+                // Normal login flow for ACTIVE users
+                login(data.access_token);
+            }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Registration failed');
         } finally {

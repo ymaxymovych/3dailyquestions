@@ -21,16 +21,13 @@ export interface YawareProductivityData {
 @Injectable()
 export class YawareService {
     private readonly logger = new Logger(YawareService.name);
-    private readonly rapidApiKey: string;
-    private readonly rapidApiHost: string;
     private readonly yawareAccessKey: string;
+    private readonly baseUrl = 'https://data1.yaware.com/export/account/json/v2';
 
     constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
     ) {
-        this.rapidApiKey = this.configService.get('RAPIDAPI_KEY') || '';
-        this.rapidApiHost = this.configService.get('RAPIDAPI_HOST') || 'yaware-timetracker.p.rapidapi.com';
         this.yawareAccessKey = this.configService.get('YAWARE_ACCESS_KEY') || '';
     }
 
@@ -43,7 +40,7 @@ export class YawareService {
         date: Date,
     ): Promise<YawareProductivityData> {
         // Check if API is configured
-        if (!this.rapidApiKey || !this.yawareAccessKey) {
+        if (!this.yawareAccessKey) {
             this.logger.warn('Yaware API not configured, using mock data');
             return this.getMockProductivityData(yawareUserId, date);
         }
@@ -51,196 +48,144 @@ export class YawareService {
         try {
             const dateStr = format(date, 'yyyy-MM-dd');
 
-            this.logger.debug(`Fetching Yaware data for user ${yawareUserId} on ${dateStr}`);
+            // Call direct Yaware API
+            const url = `${this.baseUrl}/getBeginEndMonitoringByEmployees`;
+            const params = {
+                access_key: this.yawareAccessKey,
+                employees: yawareUserId,
+                date_from: dateStr,
+                date_to: dateStr,
+            };
 
-            // Call Yaware API via RapidAPI
+            this.logger.log(`Fetching Yaware data for employee ${yawareUserId} on ${dateStr}`);
+
             const response = await firstValueFrom(
-                this.httpService.post(
-                    `https://${this.rapidApiHost}/getEmployeeProductivity`,
-                    {
-                        access_key: this.yawareAccessKey,
-                        employeeId: yawareUserId,
-                        date: dateStr,
-                    },
-                    {
-                        headers: {
-                            'X-RapidAPI-Key': this.rapidApiKey,
-                            'X-RapidAPI-Host': this.rapidApiHost,
-                            'Content-Type': 'application/json',
-                        },
-                        timeout: 5000, // 5 second timeout
-                    },
-                ),
+                this.httpService.get(url, { params })
             );
 
-            return this.parseProductivityData(response.data, yawareUserId, dateStr);
+            // Parse response and transform to our format
+            return this.transformYawareResponse(response.data, yawareUserId, dateStr);
         } catch (error) {
-            this.logger.error(
-                `Failed to fetch Yaware data for user ${yawareUserId}: ${error.message}`,
-            );
-
-            // Fallback to mock data on error
+            this.logger.error(`Failed to fetch Yaware data: ${error.message}`, error.stack);
+            this.logger.warn('Falling back to mock data');
             return this.getMockProductivityData(yawareUserId, date);
         }
     }
 
     /**
-     * Parse Yaware API response to our format
+     * Transform Yaware API response to our internal format
      */
-    private parseProductivityData(
-        data: any,
-        yawareUserId: string,
-        dateStr: string,
-    ): YawareProductivityData {
-        // Yaware tracks productive, neutral, and unproductive time
-        // Focus time = productive time (or can be calculated differently)
+    private transformYawareResponse(data: any, employeeId: string, date: string): YawareProductivityData {
+        // TODO: Parse actual Yaware response structure
+        // For now, return mock data structure
+        this.logger.log('Yaware API response received, transforming data');
+
+        // Example transformation (adjust based on actual API response)
+        const employeeData = data?.employees?.[0] || {};
 
         return {
-            employeeId: data.employeeId || data.userId || yawareUserId,
-            date: data.date || dateStr,
-            productiveTimeMinutes: data.productiveTime || data.productiveTimeMinutes || 0,
-            neutralTimeMinutes: data.neutralTime || data.neutralTimeMinutes || 0,
-            unproductiveTimeMinutes: data.unproductiveTime || data.unproductiveTimeMinutes || 0,
-            focusTimeMinutes: data.focusTime || data.focusTimeMinutes || data.productiveTime || data.productiveTimeMinutes || 0,
-            applications: data.applications || [],
+            employeeId,
+            date,
+            productiveTimeMinutes: employeeData.productive_time || 0,
+            neutralTimeMinutes: employeeData.neutral_time || 0,
+            unproductiveTimeMinutes: employeeData.unproductive_time || 0,
+            focusTimeMinutes: employeeData.focus_time || 0,
+            applications: employeeData.applications || [],
         };
     }
 
     /**
-     * Get employees by lateness (confirmed Yaware endpoint)
+     * Get work time statistics for multiple employees
      */
-    async getEmployeesByLateness(dateFrom: string, dateTo: string, limit = 100) {
-        if (!this.rapidApiKey || !this.yawareAccessKey) {
-            this.logger.warn('Yaware API not configured');
-            return [];
+    async getWorkTimeStats(
+        yawareUserIds: string[],
+        dateFrom: Date,
+        dateTo: Date,
+    ): Promise<Map<string, YawareProductivityData[]>> {
+        if (!this.yawareAccessKey) {
+            this.logger.warn('Yaware API not configured, using mock data');
+            return this.getMockWorkTimeStats(yawareUserIds, dateFrom, dateTo);
         }
 
         try {
+            const url = `${this.baseUrl}/getBeginEndMonitoringByEmployees`;
+            const params = {
+                access_key: this.yawareAccessKey,
+                employees: yawareUserIds.join(','),
+                date_from: format(dateFrom, 'yyyy-MM-dd'),
+                date_to: format(dateTo, 'yyyy-MM-dd'),
+            };
+
+            this.logger.log(`Fetching Yaware stats for ${yawareUserIds.length} employees`);
+
             const response = await firstValueFrom(
-                this.httpService.post(
-                    `https://${this.rapidApiHost}/getEmployeesByLatenessByPeriod`,
-                    {
-                        access_key: this.yawareAccessKey,
-                        dateFrom,
-                        dateTo,
-                        limit,
-                    },
-                    {
-                        headers: {
-                            'X-RapidAPI-Key': this.rapidApiKey,
-                            'X-RapidAPI-Host': this.rapidApiHost,
-                            'Content-Type': 'application/json',
-                        },
-                        timeout: 10000,
-                    },
-                ),
+                this.httpService.get(url, { params })
             );
 
-            return response.data;
+            return this.transformWorkTimeStatsResponse(response.data);
         } catch (error) {
-            this.logger.error(`Failed to fetch lateness data: ${error.message}`);
-            return [];
+            this.logger.error(`Failed to fetch Yaware stats: ${error.message}`);
+            return this.getMockWorkTimeStats(yawareUserIds, dateFrom, dateTo);
         }
     }
 
-    /**
-     * Test API connection
-     */
-    async testConnection(): Promise<{ success: boolean; message: string }> {
-        if (!this.rapidApiKey || !this.yawareAccessKey) {
-            return {
-                success: false,
-                message: 'API credentials not configured',
-            };
-        }
+    private transformWorkTimeStatsResponse(data: any): Map<string, YawareProductivityData[]> {
+        const result = new Map<string, YawareProductivityData[]>();
 
-        try {
-            const today = format(new Date(), 'yyyy-MM-dd');
+        // TODO: Parse actual response structure
+        // For now, return empty map
+        this.logger.log('Transforming work time stats response');
 
-            // Try to fetch lateness data as a connection test
-            await firstValueFrom(
-                this.httpService.post(
-                    `https://${this.rapidApiHost}/getEmployeesByLatenessByPeriod`,
-                    {
-                        access_key: this.yawareAccessKey,
-                        dateFrom: today,
-                        dateTo: today,
-                        limit: 1,
-                    },
-                    {
-                        headers: {
-                            'X-RapidAPI-Key': this.rapidApiKey,
-                            'X-RapidAPI-Host': this.rapidApiHost,
-                            'Content-Type': 'application/json',
-                        },
-                        timeout: 5000,
-                    },
-                ),
-            );
-
-            return {
-                success: true,
-                message: 'Successfully connected to Yaware API',
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: `Connection failed: ${error.message}`,
-            };
-        }
+        return result;
     }
 
     /**
-     * Mock data generator for fallback
+     * Generate mock productivity data for testing
      */
-    private getMockProductivityData(
-        yawareUserId: string,
-        date: Date,
-    ): YawareProductivityData {
-        const variant = this.getUserVariant(yawareUserId);
-        const dateStr = format(date, 'yyyy-MM-dd');
+    private getMockProductivityData(employeeId: string, date: Date): YawareProductivityData {
+        const baseMinutes = 480; // 8 hours
+        const variance = Math.random() * 0.3 - 0.15; // ±15%
 
-        const mockDataVariants = [
-            {
-                productiveTimeMinutes: 480,
-                neutralTimeMinutes: 60,
-                unproductiveTimeMinutes: 30,
-                focusTimeMinutes: 250,
-            },
-            {
-                productiveTimeMinutes: 360,
-                neutralTimeMinutes: 90,
-                unproductiveTimeMinutes: 60,
-                focusTimeMinutes: 90,
-            },
-            {
-                productiveTimeMinutes: 300,
-                neutralTimeMinutes: 120,
-                unproductiveTimeMinutes: 90,
-                focusTimeMinutes: 60,
-            },
-            {
-                productiveTimeMinutes: 420,
-                neutralTimeMinutes: 45,
-                unproductiveTimeMinutes: 15,
-                focusTimeMinutes: 200,
-            },
-        ];
-
-        const mockData = mockDataVariants[variant % mockDataVariants.length];
+        const productiveTime = Math.floor(baseMinutes * (0.6 + variance));
+        const neutralTime = Math.floor(baseMinutes * (0.25 + variance * 0.5));
+        const unproductiveTime = Math.floor(baseMinutes * (0.15 + variance * 0.3));
+        const focusTime = Math.floor(productiveTime * 0.7);
 
         return {
-            employeeId: yawareUserId,
-            date: dateStr,
-            ...mockData,
-            applications: [],
+            employeeId,
+            date: format(date, 'yyyy-MM-dd'),
+            productiveTimeMinutes: productiveTime,
+            neutralTimeMinutes: neutralTime,
+            unproductiveTimeMinutes: unproductiveTime,
+            focusTimeMinutes: focusTime,
+            applications: [
+                { name: 'VS Code', timeMinutes: Math.floor(productiveTime * 0.4), category: 'productive' },
+                { name: 'Chrome', timeMinutes: Math.floor(productiveTime * 0.3), category: 'productive' },
+                { name: 'Slack', timeMinutes: Math.floor(neutralTime * 0.6), category: 'neutral' },
+                { name: 'YouTube', timeMinutes: Math.floor(unproductiveTime * 0.5), category: 'unproductive' },
+            ],
         };
     }
 
-    /**
-     * Generate consistent variant for user
-     */
-    private getUserVariant(userId: string): number {
-        return userId.charCodeAt(0) % 4;
+    private getMockWorkTimeStats(
+        yawareUserIds: string[],
+        dateFrom: Date,
+        dateTo: Date,
+    ): Map<string, YawareProductivityData[]> {
+        const result = new Map<string, YawareProductivityData[]>();
+
+        yawareUserIds.forEach(userId => {
+            const stats: YawareProductivityData[] = [];
+            const currentDate = new Date(dateFrom);
+
+            while (currentDate <= dateTo) {
+                stats.push(this.getMockProductivityData(userId, new Date(currentDate)));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            result.set(userId, stats);
+        });
+
+        return result;
     }
 }

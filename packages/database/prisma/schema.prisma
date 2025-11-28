@@ -61,14 +61,26 @@ enum InviteStatus {
 }
 
 model Department {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
+  
   orgId     String
-  org       Organization @relation(fields: [orgId], references: [id])
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Link to archetype template (optional for custom departments)
+  archetypeId String?
+  archetype   DepartmentArchetype? @relation(fields: [archetypeId], references: [id])
+  
   managerId String?
   hrId      String?
+  
   users     User[]
   projects  Project[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("departments")
 }
 
 // Legacy Enum - Keeping for migration safety, but moving to Role model
@@ -85,6 +97,12 @@ enum Language {
   EN
 }
 
+enum UserStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -93,6 +111,7 @@ model User {
   fullName     String
   timezone     String   @default("UTC")
   language     Language @default(UK)
+  status       UserStatus @default(ACTIVE)
   orgId        String
   org          Organization @relation(fields: [orgId], references: [id])
   deptId       String?
@@ -524,6 +543,7 @@ model DepartmentArchetype {
   description String?
   
   roles       RoleArchetype[]
+  departments Department[] // Actual departments using this archetype
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

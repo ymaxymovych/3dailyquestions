@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { CreateOrganizationDto, UpdateOrganizationDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -31,9 +31,8 @@ export class OrganizationController {
     }
 
     @Get('suggested')
-    @UseGuards(AuthGuard('jwt'))
-    findSuggested(@Request() req: any) {
-        return this.organizationService.findSuggestedOrgs(req.user.email);
+    findSuggested(@Query('email') email: string) {
+        return this.organizationService.findSuggestedOrgs(email);
     }
 
     @Get(':id')

@@ -29,6 +29,7 @@ export class AuthService {
         const user = await this.prisma.$transaction(async (tx) => {
             let orgId: string;
             let roleName = 'EMPLOYEE'; // Default role for joiners
+            let status: 'ACTIVE' | 'PENDING' = 'ACTIVE';
 
             if (dto.orgName) {
                 // Create new organization
@@ -37,19 +38,19 @@ export class AuthService {
                 });
                 orgId = org.id;
                 roleName = 'OWNER'; // Creator is owner
+                status = 'ACTIVE';
             } else if (dto.inviteCode) {
                 // Join existing organization
-                // TODO: Implement proper invite code lookup. For now, assuming inviteCode is orgId or slug
-                // In real app, we'd look up an Invite record.
-                // Let's assume for MVP that we don't have invite codes yet, so we just fail if no orgName.
-                // But wait, user asked for "Update registration to create/join organization".
-                // Let's just find org by ID for now if provided as inviteCode, or throw.
                 const org = await tx.organization.findFirst({
                     where: { OR: [{ id: dto.inviteCode }, { slug: dto.inviteCode }] } as any
                 });
 
                 if (!org) throw new BadRequestException('Invalid invite code');
                 orgId = org.id;
+
+                // If joining via generic invite code (not specific user invite), set to PENDING
+                // For now, we treat all joins to existing orgs as requests to join unless we have a specific invite token logic
+                status = 'PENDING';
             } else {
                 throw new BadRequestException('Organization name or invite code required');
             }
@@ -73,6 +74,7 @@ export class AuthService {
                     fullName: dto.fullName,
                     passwordHash,
                     orgId: orgId,
+                    status: status,
                     roles: {
                         create: {
                             roleId: role.id
@@ -88,7 +90,11 @@ export class AuthService {
         });
 
         const roleNames = user.roles.map(ur => ur.role.name);
-        return this.signToken(user.id, user.email, roleNames, user.orgId);
+        // Include status in the response so frontend knows to redirect
+        return {
+            ...(await this.signToken(user.id, user.email, roleNames, user.orgId, user.status)),
+            status: user.status
+        };
     }
 
     async login(dto: LoginDto) {
@@ -106,7 +112,7 @@ export class AuthService {
         if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
         const roleNames = user.roles.map(ur => ur.role.name);
-        return this.signToken(user.id, user.email, roleNames, user.orgId);
+        return this.signToken(user.id, user.email, roleNames, user.orgId, user.status);
     }
 
     async validateGoogleUser(details: { email: string; firstName: string; lastName: string; picture: string; googleId: string; accessToken?: string; refreshToken?: string }) {
@@ -207,11 +213,11 @@ export class AuthService {
     async loginWithGoogle(user: any) {
         // User from validateGoogleUser already has roles included
         const roleNames = user.roles ? user.roles.map((ur: any) => ur.role.name) : [];
-        return this.signToken(user.id, user.email, roleNames, user.orgId);
+        return this.signToken(user.id, user.email, roleNames, user.orgId, user.status);
     }
 
-    private async signToken(userId: string, email: string, roles: string[], organizationId: string) {
-        const payload = { sub: userId, email, roles, orgId: organizationId };
+    private async signToken(userId: string, email: string, roles: string[], organizationId: string, status: string = 'ACTIVE') {
+        const payload = { sub: userId, email, roles, orgId: organizationId, status };
         return {
             access_token: await this.jwtService.signAsync(payload),
         };
