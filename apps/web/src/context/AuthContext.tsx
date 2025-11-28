@@ -8,6 +8,7 @@ interface User {
     id: string;
     email: string;
     fullName: string;
+    orgId: string;
     roles: string[];
 }
 
@@ -16,6 +17,7 @@ interface AuthContextType {
     login: (token: string) => void;
     logout: () => void;
     isLoading: boolean;
+    refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,16 +65,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/login');
     }, [router]);
 
+    const refreshProfile = useCallback(async () => {
+        try {
+            const { data } = await api.get('/users/me');
+            setUser(data);
+            return data;
+        } catch (error) {
+            console.error('Failed to refresh profile', error);
+        }
+    }, []);
+
     // Protect routes
     useEffect(() => {
-        const publicPaths = ['/login', '/register', '/auth/callback'];
-        if (!isLoading && !user && !publicPaths.includes(pathname)) {
-            router.push('/login');
+        const publicPaths = ['/login', '/register', '/auth/callback', '/onboarding'];
+        if (!isLoading) {
+            if (!user && !publicPaths.includes(pathname)) {
+                router.push('/login');
+            } else if (user && !user.orgId && pathname !== '/onboarding') {
+                router.push('/onboarding');
+            } else if (user && user.orgId && pathname === '/onboarding') {
+                router.push('/dashboard'); // Already onboarded
+            }
         }
     }, [user, isLoading, pathname, router]);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, login, logout, isLoading, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

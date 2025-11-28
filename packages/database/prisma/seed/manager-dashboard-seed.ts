@@ -5,6 +5,19 @@ const prisma = new PrismaClient();
 async function seedManagerDashboard() {
     console.log('🌱 Seeding Manager Dashboard test data...');
 
+    // Find or create Organization
+    let org = await prisma.organization.findFirst();
+    if (!org) {
+        org = await prisma.organization.create({
+            data: {
+                name: 'Test Organization',
+                slug: 'test-org',
+                plan: 'enterprise'
+            }
+        });
+        console.log('✅ Created default organization');
+    }
+
     // Find or create Sales Department
     const salesDept = await prisma.department.upsert({
         where: { id: 'sales-dept-id' },
@@ -12,7 +25,7 @@ async function seedManagerDashboard() {
         create: {
             id: 'sales-dept-id',
             name: 'Sales',
-            orgId: (await prisma.organization.findFirst())!.id,
+            orgId: org.id,
         },
     });
 

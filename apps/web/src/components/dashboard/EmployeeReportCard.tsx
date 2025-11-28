@@ -122,6 +122,31 @@ export function EmployeeReportCard({ report, onClick }: EmployeeReportCardProps)
                         </div>
                     </div>
                 </div>
+
+                {/* Plan vs Fact (Yaware Integration) */}
+                {report.integrationsSnapshot && (
+                    <div className="mt-4 pt-4 border-t">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">Фокус (Yaware)</span>
+                            <span className="font-medium">
+                                {Math.round(report.integrationsSnapshot.focusTimeMinutes / 60)}h {report.integrationsSnapshot.focusTimeMinutes % 60}m
+                                <span className="text-muted-foreground mx-1">/</span>
+                                {Math.round(report.integrationsSnapshot.plannedFocusMinutes / 60)}h
+                            </span>
+                        </div>
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                            <div
+                                className={cn(
+                                    "h-full rounded-full transition-all",
+                                    report.integrationsSnapshot.focusTimePercentage >= 100 ? "bg-green-500" :
+                                        report.integrationsSnapshot.focusTimePercentage >= 80 ? "bg-blue-500" :
+                                            "bg-yellow-500"
+                                )}
+                                style={{ width: `${Math.min(report.integrationsSnapshot.focusTimePercentage, 100)}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

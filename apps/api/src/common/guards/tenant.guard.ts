@@ -15,16 +15,14 @@ export class TenantGuard implements CanActivate {
         }
 
         // Check if user has organization
-        if (!user.organizationId) {
+        if (!user.orgId) {
             // If user is authenticated but has no org, they might be in onboarding
-            // We can allow or block depending on policy. For now, let's allow but log warning.
-            // Or maybe block access to org-specific resources?
-            // For now, we just ensure request.organizationId is set if user has it.
+            // Allow access but don't set organizationId
             return true;
         }
 
         // Inject organizationId into request for use in services
-        request.organizationId = user.organizationId;
+        request.organizationId = user.orgId;
 
         return true;
     }

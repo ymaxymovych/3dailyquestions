@@ -12,6 +12,11 @@ datasource db {
 model Organization {
   id             String          @id @default(uuid())
   name           String
+  slug           String?         @unique @default(cuid())
+  plan           String          @default("free")
+  status         String          @default("active")
+  maxUsers       Int             @default(5)
+  maxProjects    Int             @default(10)
   timezone       String          @default("UTC")
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -20,6 +25,39 @@ model Organization {
   projects       Project[]
   tags           Tag[]
   kpiDefinitions KpiDefinition[]
+  dailyReports   DailyReport[]
+  domains        String[]        @default([]) // e.g. ["softserve.com", "google.com"]
+  invites        Invite[]
+}
+
+model Invite {
+  id          String   @id @default(uuid())
+  email       String
+  token       String   @unique
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  inviterId   String
+  inviter     User     @relation("UserInvites", fields: [inviterId], references: [id])
+  
+  role        String?  // e.g. "EMPLOYEE", "MANAGER"
+  
+  expiresAt   DateTime
+  status      InviteStatus @default(PENDING)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([email])
+  @@index([token])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }
 
 model Department {
@@ -86,6 +124,7 @@ model User {
   workdaySettings WorkdaySettings?
   artifacts       Artifact[]
   userProjects    UserProject[]
+  sentInvites     Invite[]      @relation("UserInvites")
 }
 
 // --- Access Control (RBAC) ---
@@ -374,6 +413,9 @@ model DailyReport {
   userId      String
   user        User @relation(fields: [userId], references: [id])
   
+  orgId       String?
+  org         Organization? @relation(fields: [orgId], references: [id])
+  
   yesterdayBig    Json?
   yesterdayMedium Json?
   yesterdaySmall  Json?
@@ -400,6 +442,8 @@ model DailyReport {
   kpis            DailyReportKPI[]
   
   @@unique([userId, date])
+  @@index([orgId])
+  @@index([orgId, date])
 }
 
 model DailyReportKPI {

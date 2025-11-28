@@ -12,6 +12,12 @@ export class AuthService {
     ) { }
 
     async register(dto: RegisterDto) {
+        // Validate disposable emails
+        const { isDisposableEmail } = await import('../common/utils/email-validator.js');
+        if (isDisposableEmail(dto.email)) {
+            throw new BadRequestException('Disposable emails are not allowed. Please use a permanent email address.');
+        }
+
         // 1. Check if user exists
         const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
         if (existing) throw new ConflictException('User already exists');
@@ -205,7 +211,7 @@ export class AuthService {
     }
 
     private async signToken(userId: string, email: string, roles: string[], organizationId: string) {
-        const payload = { sub: userId, email, roles, organizationId };
+        const payload = { sub: userId, email, roles, orgId: organizationId };
         return {
             access_token: await this.jwtService.signAsync(payload),
         };

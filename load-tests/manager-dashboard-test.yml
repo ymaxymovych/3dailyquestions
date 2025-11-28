@@ -1,0 +1,57 @@
+config:
+  target: "http://localhost:3001"
+  phases:
+    # Warm-up
+    - duration: 10
+      arrivalRate: 5
+      name: "Warm up"
+    
+    # Gradual ramp
+    - duration: 30
+      arrivalRate: 10
+      rampTo: 30
+      name: "Ramp up"
+    
+    # Sustained load
+    - duration: 60
+      arrivalRate: 50
+      name: "Sustained load"
+    
+    # Spike test
+    - duration: 20
+      arrivalRate: 100
+      name: "Spike"
+
+scenarios:
+  - name: "Manager Dashboard with DB"
+    weight: 100
+    flow:
+      # Login
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "manager@example.com"
+            password: "password123"
+          capture:
+            - json: "$.access_token"
+              as: "token"
+          expect:
+            - statusCode: 200
+      
+      # Get team reports (heavy DB query)
+      - get:
+          url: "/api/manager-dashboard/team-reports"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          expect:
+            - statusCode: 200
+          capture:
+            - json: "$.reports[0].id"
+              as: "reportId"
+      
+      # Get specific report details (if available)
+      - get:
+          url: "/api/manager-dashboard/reports/{{ reportId }}"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          ifTrue: "reportId"

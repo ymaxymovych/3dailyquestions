@@ -12,6 +12,7 @@ import { AccessTab } from "@/components/settings/AccessTab";
 
 import { ProjectsTab } from "@/components/settings/ProjectsTab";
 import { TagsTab } from "@/components/settings/TagsTab";
+import { OrganizationTab } from "@/components/settings/OrganizationTab";
 
 export default function SettingsPage() {
     const { user } = useAuth();
@@ -27,8 +28,9 @@ export default function SettingsPage() {
                 </p>
             </div>
 
-            <Tabs defaultValue="profile" className="space-y-4">
+            <Tabs defaultValue="organization" className="space-y-4">
                 <TabsList className="flex-wrap h-auto">
+                    <TabsTrigger value="organization">Organization</TabsTrigger>
                     <TabsTrigger value="profile">Profile</TabsTrigger>
                     <TabsTrigger value="job-role">Job Role</TabsTrigger>
                     <TabsTrigger value="workday">Workday</TabsTrigger>
@@ -39,6 +41,10 @@ export default function SettingsPage() {
                     <TabsTrigger value="access">Access & Security</TabsTrigger>
                     <TabsTrigger value="integrations">Integrations</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="organization" className="space-y-4">
+                    <OrganizationTab />
+                </TabsContent>
 
                 <TabsContent value="profile" className="space-y-4">
                     <ProfileTab />

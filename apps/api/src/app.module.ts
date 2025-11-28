@@ -14,6 +14,7 @@ import { RoleArchetypesModule } from './role-archetypes/role-archetypes.module';
 import { ManagerDashboardModule } from './manager-dashboard/manager-dashboard.module';
 import { HealthModule } from './health/health.module';
 import { OrganizationModule } from './organization/organization.module';
+import { SeederModule } from './seeder/seeder.module';
 
 import { ConfigModule } from '@nestjs/config';
 
@@ -33,6 +34,7 @@ import { ConfigModule } from '@nestjs/config';
     ManagerDashboardModule,
     HealthModule,
     OrganizationModule,
+    SeederModule,
   ],
   controllers: [AppController],
   providers: [AppService],

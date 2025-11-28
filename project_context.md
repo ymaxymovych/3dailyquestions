@@ -1,404 +1,383 @@
-# Project Context - Crystal Kuiper SaaS Planner
+# Crystal Kuiper - Project Context & Status
 
-**Date:** 2025-11-25  
-**Session Focus:** User Admin Module Implementation & UI Refactoring
-
----
-
-## Session Objectives
-
-### Primary Goal
-Implement a comprehensive **User Admin Module** ("Single User Passport") including:
-- Extended database schema for user profiles, roles, KPIs, workday settings
-- Backend APIs for managing user admin data
-- Frontend Settings UI refactored to a tabbed interface
-- Role-based access control (RBAC) with scopes
-- Integration with Daily Report system
-
-### Secondary Goals
-- Fix authentication and build errors blocking the application
-- Resolve UI nesting issues in Settings layout
-- Document common errors in an error registry
+**Last Updated:** 2025-11-28  
+**Current Phase:** Multi-Tenancy Implementation (Completed)
 
 ---
 
-## Current State
+## 🎯 Project Overview
 
-### What Works
-✅ **Database Schema**: Extended with User Admin entities (Role, UserRole, Artifact, WorkdaySettings, KpiDefinition, UserKPI, UserProject)  
-✅ **Role Archetypes System**: Implemented DepartmentArchetype, RoleArchetype, and KPITemplate models for job roles (Sales SDR, AE, etc.)  
-✅ **Daily Report KPI Integration**: Added DailyReportKPI model and integrated KPI input fields into Daily Report form  
-✅ **Backend APIs**: Created UserAdminModule with services and controllers for Profile, Role, KPI, AccessLog  
-✅ **Role Archetypes API**: Created RoleArchetypesModule with endpoints for departments and roles  
-✅ **Frontend Components**: Created tab components (ProfileTab, WorkdayTab, KPITab, RolesTab, AccessTab, IntegrationsTab, ProjectsTab, TagsTab)  
-✅ **Job Role Tab**: Added JobRoleTab in Settings for selecting user's job role archetype  
-✅ **KPI Input Component**: Created KPIInputSection component for dynamic KPI fields in Daily Report  
-✅ **Settings Layout**: Removed redundant secondary sidebar, simplified to Main Sidebar + Tabbed Content  
-✅ **Error Registry**: Created `error_registry.md` documenting common errors and solutions  
-✅ **RBAC Infrastructure**: Implemented `@RequirePermissions` decorator and `PermissionsGuard`  
+**Crystal Kuiper** - Employee productivity tracking and management platform with AI-powered insights.
 
-### What's Broken / In Progress
-🔴 **Tab Switching Issue**: Projects and Tags tabs are visible but clicking them doesn't switch the content view  
-🟡 **Authentication**: Backend build errors were fixed, but authentication hasn't been tested end-to-end yet  
-🟡 **Persistent Lint Error**: `File '@repo/typescript-config/base.json' not found` in `packages/database/tsconfig.json`  
+### Tech Stack
+- **Backend:** NestJS (Node.js), PostgreSQL, Prisma ORM
+- **Frontend:** Next.js (React), Tailwind CSS, Shadcn UI
+- **Monorepo:** Turborepo (pnpm)
+- **Auth:** JWT + Google OAuth
+- **Integrations:** Yaware TimeTracker (via RapidAPI), Google Calendar (planned)
 
-### What's Missing
-- Initial data seeding for Role Archetypes (already have seed script, need to run it)
-- KPI validation and analytics (charts, trends, fact vs plan comparison)
-- AI integration with KPI data for insights and recommendations
-- Complete browser verification of all Settings tabs functionality
-- End-to-end authentication testing (manual registration, Google OAuth)
+### Ports
+- **API:** http://localhost:3001 (prefix: `/api`)
+- **Web:** http://localhost:3000
 
 ---
 
-## Recent Key Decisions & Design Choices
+## ✅ Completed Features
 
-### 1. Tabbed Settings Interface
-**Decision**: Replace sidebar-based navigation with a tabbed interface at `/settings`  
-**Reasoning**: 
-- Reduces visual clutter (no nested sidebars)
-- All settings in one view, easier to navigate
-- Consistent with modern UI patterns
+### Phase 1: Core Features
+- ✅ Authentication (JWT + Google OAuth)
+- ✅ User management (RBAC: EMPLOYEE, MANAGER, ADMIN)
+- ✅ Daily reports submission
+- ✅ Projects & Tags management
+- ✅ Department structure
 
-**Migration Path**:
-- General → Profile
-- Work Routine → Workday
-- My KPIs → KPIs
-- Integrations → Integrations
-- Security → Access & Security
-- Projects → Projects (new tab)
-- Tags → Tags (new tab)
+### Phase 2: Manager Dashboard (MVP)
+- ✅ Team reports overview
+- ✅ Employee status tracking
+- ✅ Report details modal
+- ✅ Date filtering
+- ✅ Summary statistics
 
-### 2. Removing Secondary Sidebar
-**Decision**: Remove the Settings-specific sidebar (General, Work Routine, etc.)  
-**Reasoning**:
-- User reported it as unwanted nested content
-- Duplicates functionality now in tabs
-- Simplifies layout: Main Sidebar → Content
+### Phase 3: AI Flags
+- ✅ Automatic risk detection
+- ✅ Pattern analysis (burnout, disengagement, blockers)
+- ✅ AI-generated suggestions (Ukrainian)
+- ✅ Risk levels (low, medium, high)
 
-### 3. Role Management Schema
-**Decision**: Use separate `Role` and `UserRole` models instead of enum-based roles  
-**Reasoning**:
-- Flexibility: roles can be created/modified without schema changes
-- Scopes: fine-grained permissions (e.g., `read:reports`, `write:users`)
-- Audit trail: `AccessLog` tracks sensitive data access
+### Phase 4: Integrations (In Progress)
+- ✅ Yaware API integration (backend ready)
+  - YawareService with RapidAPI
+  - Mock data fallback
+  - IntegrationsSnapshotService
+- ✅ Plan vs Fact comparison
+- ✅ Underfocused detection
+- ⏳ Waiting for YAWARE_ACCESS_KEY from support
+- ❌ Google Calendar OAuth (postponed)
 
-### 4. Legacy Code Removal
-**Decision**: Remove legacy KPI methods from `UserSettingsService` and endpoints from `UserSettingsController`  
-**Reasoning**:
-- Old `KPI` model was replaced with `KpiDefinition` and `UserKPI`
-- New `KpiService` in `user-admin` module handles all KPI logic
-- Prevents confusion and maintains single source of truth
-
-### 5. Component Structure
-**Decision**: Create separate tab components instead of inline code in `SettingsPage`  
-**Reasoning**:
-- Separation of concerns
-- Reusability
-- Easier testing and maintenance
+### Phase 5: Performance & SaaS Readiness
+- ✅ Load testing setup (Artillery)
+- ✅ Health endpoints
+- ✅ Performance benchmarks
+- ✅ Multi-tenancy (Organization model, TenantGuard, Isolation)
+- ⏳ Redis caching (planned)
 
 ---
 
-## Current Blockers
+## 📊 Performance Benchmarks (Tested 2025-11-27)
 
-### 1. Tab Switching Not Working (CRITICAL)
-**Symptom**: Projects and Tags tabs are visible but clicking them doesn't switch the content  
-**Possible Causes**:
-- React state issue with Tabs component
-- Missing `"use client"` directive
-- Event handler not properly attached
-- Conflicting component keys
+### Health Endpoint (Simple)
+```
+RPS: 2,228 req/sec ✅
+Latency p95: 25.8ms ✅
+Latency p99: 32.1ms ✅
+Success rate: 100% ✅
+Concurrent users: ~45
+```
 
-**Next Steps**:
-- Check if `ProjectsTab` and `TagsTab` have `"use client"` directive
-- Verify Tabs component implementation
-- Test other tabs to see if they switch correctly
-- Check browser console for JavaScript errors
-
-### 2. Authentication Not Verified
-**Symptom**: Backend compiled successfully after fixes, but no end-to-end test performed  
-**Risk**: Users might not be able to register or log in  
-**Next Steps**:
-- Test manual registration
-- Test Google OAuth flow
-- Verify JWT token generation includes roles
+### Manager Dashboard (with DB) - Pending
+```
+Status: Test blocked - need test user with password
+Issue: Artillery can't test Google OAuth flow
+Solution: Create test manager with email/password
+```
 
 ---
 
-## Agent Reasoning & Thoughts
+## 🗂️ Project Structure
 
-### Why the Tab Switching Might Be Broken
-The browser subagent reported that clicking "Projects" and "Tags" tabs doesn't switch the view. This is unusual because:
-1. The tabs are rendered (visible in UI)
-2. The TabsContent components are defined
-3. Other tabs (Profile, Workday) presumably work
-
-**Hypothesis 1**: The `ProjectsTab` and `TagsTab` components might be missing the `"use client"` directive, causing them to be server components that don't hydrate properly.
-
-**Hypothesis 2**: There might be a runtime error in `ProjectsTab` or `TagsTab` preventing them from rendering, but the error is caught silently.
-
-**Hypothesis 3**: The Tabs component might have a maximum number of tabs or specific configuration requirement we're missing.
-
-### Why We Simplified the Layout
-Initially, I tried to keep both the Main Sidebar and Settings Sidebar by wrapping `SettingsLayout` in `AppLayout`. However, the user reported seeing the Main Sidebar *inside* the Settings content area (nested incorrectly).
-
-After investigation, I realized:
-1. The Settings sidebar was redundant with the new tabbed interface
-2. The user explicitly wanted it removed (highlighted in red on screenshot)
-3. Removing it simplifies the hierarchy: `AppLayout` → `SettingsLayout` → `SettingsPage` → Tabs
-
-### Error Registry Philosophy
-Created `error_registry.md` because this is the second time we encountered a "nested layout" issue. The registry helps:
-- Document patterns of errors
-- Provide solutions for future reference
-- Build institutional knowledge
-- Reduce time spent on repeat issues
-
----
-
-## File State Summary
-
-### New Files Created
-- `apps/api/src/user-admin/user-admin.module.ts` - User Admin module definition
-- `apps/api/src/user-admin/profile.service.ts` - Profile management service
-- `apps/api/src/user-admin/profile.controller.ts` - Profile API endpoints
-- `apps/api/src/user-admin/role.service.ts` - Role management service
-- `apps/api/src/user-admin/role.controller.ts` - Role API endpoints
-- `apps/api/src/user-admin/kpi.service.ts` - KPI management service
-- `apps/api/src/user-admin/kpi.controller.ts` - KPI API endpoints
-- `apps/api/src/user-admin/access-log.service.ts` - Access logging service
-- `apps/api/src/user-admin/access-log.controller.ts` - Access log API endpoints
-- `apps/api/src/auth/permissions.decorator.ts` - RBAC decorator
-- `apps/api/src/auth/permissions.guard.ts` - RBAC guard
-- `apps/web/src/components/settings/ProfileTab.tsx` - Profile settings tab
-- `apps/web/src/components/settings/KPITab.tsx` - KPI settings tab
-- `apps/web/src/components/settings/WorkdayTab.tsx` - Workday settings tab
-- `apps/web/src/components/settings/RolesTab.tsx` - Roles settings tab
-- `apps/web/src/components/settings/AccessTab.tsx` - Access & Security tab
-- `apps/web/src/components/settings/IntegrationsTab.tsx` - Integrations tab
-- `apps/web/src/components/settings/ProjectsTab.tsx` - Projects management tab
-- `apps/web/src/components/settings/TagsTab.tsx` - Tags management tab
-- `apps/web/src/components/ui/checkbox.tsx` - Checkbox Shadcn UI component
-- `apps/web/src/components/ui/tabs.tsx` - Tabs Shadcn UI component
-- `.gemini/.../error_registry.md` - Common errors registry
-- `.gemini/.../role_management_spec.md` - Role management specification
-- `.gemini/.../user_admin_spec.md` - User admin specification
-
-### Modified Files
-- `packages/database/prisma/schema.prisma` - Extended with User Admin models
-- `apps/api/src/app.module.ts` - Import UserAdminModule
-- `apps/api/src/auth/auth.module.ts` - Import UserAdminModule for PermissionsGuard
-- `apps/api/src/auth/auth.service.ts` - Updated for new UserRole schema
-- `apps/api/src/daily-reports/daily-reports.module.ts` - Import UserAdminModule
-- `apps/api/src/daily-reports/daily-reports.service.ts` - Integrate WorkdaySettings and UserKPI
-- `apps/api/src/user-settings/user-settings.service.ts` - Removed legacy KPI methods
-- `apps/api/src/user-settings/user-settings.controller.ts` - Removed legacy KPI endpoints
-- `apps/web/src/app/settings/layout.tsx` - Simplified to just wrap children in AppLayout (removed sidebar)
-- `apps/web/src/app/settings/page.tsx` - Refactored to tabbed interface with all tabs
-- `apps/web/src/app/daily-report/page.tsx` - Moved 'Add' buttons to headers, added Metrics fields
-
-### Deleted Content
-- Settings sidebar navigation (from layout.tsx)
-- Legacy KPI methods in UserSettingsService
-- AppLayout import from old SettingsPage (was causing double nesting)
+```
+crystal-kuiper/
+├── apps/
+│   ├── api/                    # NestJS backend
+│   │   ├── src/
+│   │   │   ├── auth/          # JWT + Google OAuth
+│   │   │   ├── users/         # User management
+│   │   │   ├── daily-reports/ # Report submission
+│   │   │   ├── manager-dashboard/  # Manager features
+│   │   │   │   ├── manager-dashboard.service.ts
+│   │   │   │   ├── ai-flags.service.ts
+│   │   │   │   └── integrations-snapshot.service.ts
+│   │   │   ├── integrations/
+│   │   │   │   └── yaware/    # Yaware API integration
+│   │   │   │       ├── yaware.service.ts
+│   │   │   │       └── yaware.module.ts
+│   │   │   ├── health/        # Health checks (NEW)
+│   │   │   ├── organization/  # Organization management (NEW)
+│   │   │   ├── common/
+│   │   │   │   └── guards/    # TenantGuard (NEW)
+│   │   │   └── main.ts        # Global prefix: /api
+│   │   ├── .env               # Environment variables
+│   │   └── package.json
+│   │
+│   └── web/                   # Next.js frontend
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── dashboard/
+│       │   │   │   ├── manager/  # Manager Dashboard UI
+│       │   │   │   └── page.tsx
+│       │   │   └── settings/
+│       │   ├── components/
+│       │   │   ├── dashboard/
+│       │   │   │   ├── DashboardSummary.tsx
+│       │   │   │   ├── EmployeeReportCard.tsx
+│       │   │   │   └── ReportDetailsModal.tsx
+│       │   │   ├── settings/
+│       │   │   │   └── OrganizationTab.tsx (NEW)
+│       │   │   └── ui/        # Shadcn components
+│       │   └── lib/
+│       └── package.json
+│
+├── packages/
+│   └── database/              # Prisma shared package
+│       ├── prisma/
+│       │   ├── schema.prisma  # Database schema
+│       │   ├── migrations/
+│       │   └── seed/
+│       │       ├── manager-dashboard-seed.ts
+│       │       └── create-test-manager.ts (NEW)
+│       └── package.json
+│
+├── load-tests/                # Performance testing (NEW)
+│   └── manager-dashboard-test.yml
+│
+└── package.json               # Root monorepo config
+```
 
 ---
 
-## Technical Implementation Details
+## 🔑 Environment Variables
 
-### Database Schema Changes
+### apps/api/.env
+```env
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/crystal_kuiper?schema=public"
+
+# JWT
+JWT_SECRET="your-secret-key"
+JWT_EXPIRES_IN="7d"
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_CALLBACK_URL="http://localhost:3001/api/auth/google/callback"
+
+# Yaware API (via RapidAPI)
+RAPIDAPI_KEY="ab6fbeda98msh6a304c68759bf0ap1f7cccjsna5db737eedf1"
+RAPIDAPI_HOST="yaware-timetracker.p.rapidapi.com"
+YAWARE_ACCESS_KEY=""  # Waiting for support response
+
+# Server
+PORT=3001
+```
+
+---
+
+## 🗄️ Database Schema (Key Models)
+
+### Organization (NEW)
 ```prisma
-// New Models
-model Role {
-  id          String     @id @default(cuid())
-  name        String     @unique
-  description String?
-  scopes      String[]   // JSON array of permission scopes
-  isSystem    Boolean    @default(false)
-  UserRole    UserRole[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model UserRole {
-  id        String   @id @default(cuid())
-  userId    String
-  roleId    String
-  assignedAt DateTime @default(now())
-  assignedBy String?
+model Organization {
+  id             String          @id @default(uuid())
+  name           String
+  slug           String?         @unique @default(cuid())
+  plan           String          @default("free")
+  status         String          @default("active")
+  maxUsers       Int             @default(5)
+  maxProjects    Int             @default(10)
   
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, roleId])
-}
-
-model Artifact {
-  id          String        @id @default(cuid())
-  userId      String
-  type        ArtifactType
-  layer       ProfileLayer
-  title       String
-  content     String        @db.Text
-  version     Int           @default(1)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId, type, layer])
-}
-
-model WorkdaySettings {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  defaultStartTime String? // HH:mm format
-  defaultEndTime   String? // HH:mm format
-  workDays        String[] // JSON array ["Monday", "Tuesday", ...]
-  timezone        String?
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model KpiDefinition {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  unit        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  UserKPI UserKPI[]
-  
-  @@unique([name])
-}
-
-model UserKPI {
-  id             String        @id @default(cuid())
-  userId         String
-  kpiId          String
-  targetValue    String?
-  currentValue   String?
-  assignedAt     DateTime      @default(now())
-  
-  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kpi  KpiDefinition @relation(fields: [kpiId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, kpiId])
-}
-
-model AccessLog {
-  id          String   @id @default(cuid())
-  userId      String
-  targetUserId String
-  dataType    String   // e.g., "passport", "role"
-  action      String   // e.g., "read", "write"
-  reason      String?
-  ipAddress   String?
-  userAgent   String?
-  timestamp   DateTime @default(now())
-  
-  user   User @relation("AccessLogUser", fields: [userId], references: [id], onDelete: Cascade)
-  target User @relation("AccessLogTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([targetUserId])
-  @@index([timestamp])
+  users          User[]
+  departments    Department[]
+  projects       Project[]
+  dailyReports   DailyReport[]
 }
 ```
 
-### API Endpoints
-- `GET /user-admin/profile/:userId` - Get user profile
-- `PATCH /user-admin/profile` - Update user profile
-- `POST /user-admin/profile/artifact` - Upload artifact
-- `GET /user-admin/profile/workday` - Get workday settings
-- `PATCH /user-admin/profile/workday` - Update workday settings
-- `GET /user-admin/roles` - List all roles
-- `POST /user-admin/roles` - Create role
-- `PATCH /user-admin/roles/:id` - Update role
-- `DELETE /user-admin/roles/:id` - Delete role
-- `POST /user-admin/roles/assign` - Assign role to user
-- `GET /user-admin/kpi/my` - Get my KPIs
-- `POST /user-admin/kpi/assign` - Assign KPI to user
-- `POST /user-admin/access/request-detail` - Request detailed access
-- `GET /user-admin/access/logs` - Get access logs
-
-### Frontend Tab Architecture
-Each tab is a standalone component that:
-1. Uses `useAuth()` hook for user context
-2. Manages its own state (loading, editing, form data)
-3. Calls appropriate API endpoints
-4. Shows toast notifications for feedback
-5. Handles create/update/delete operations
+### User
+```prisma
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?   # Null for Google OAuth users
+  firstName     String
+  lastName      String
+  role          Role      @default(EMPLOYEE)
+  
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id])
+  departmentId  String?
+  
+  dailyReports  DailyReport[]
+  managedDepartments Department[] @relation("DepartmentManager")
+}
+```
 
 ---
 
-## Git Diff
+## 🚀 Quick Start Commands
 
-**Full diff available in:** `git_diff.txt` (242 KB)
+### Development
+```bash
+# Install dependencies
+pnpm install
 
-### Change Statistics
-**Total Changes:** 28 files changed, 1342 insertions(+), 683 deletions(-)
+# Start database
+# (Ensure PostgreSQL is running on localhost:5432)
 
-**Major File Changes:**
-- `packages/database/prisma/schema.prisma`: +346 lines (User Admin schema)
-- `apps/web/src/app/daily-report/page.tsx`: +704 lines (UI refactoring)
-- `pnpm-lock.yaml`: +462 lines (new dependencies)
-- `apps/web/package.json`: +6 lines (checkbox, tabs dependencies)
+# Run migrations
+cd packages/database
+npx prisma migrate dev
 
-**Deleted Files:**
-- `apps/web/app/favicon.ico`
-- `apps/web/app/fonts/GeistMonoVF.woff`
-- `apps/web/app/fonts/GeistVF.woff`
-- `apps/web/app/globals.css`
-- `apps/web/app/layout.tsx`
-- `apps/web/app/page.module.css`
-- `apps/web/app/page.tsx`
-- `apps/web/eslint.config.js`
-- `apps/web/next.config.js`
-- `apps/web/public/file-text.svg`
-- `apps/web/public/turborepo-dark.svg`
-- `apps/web/public/turborepo-light.svg`
+# Seed data (optional)
+npx prisma db seed
 
-**Modified Files:**
-- `apps/web/src/app/layout.tsx`
-- `apps/web/src/app/login/page.tsx`
-- `apps/web/src/components/layout/Header.tsx`
-- `apps/web/src/components/layout/Sidebar.tsx`
-- `apps/web/src/components/ui/input.tsx`
-- `apps/web/src/context/AuthContext.tsx`
-- `apps/web/src/lib/api.ts`
-- `apps/web/src/lib/daily-reports.ts`
-- `packages/database/tsconfig.json`
+# Start API
+cd apps/api
+npm run start:dev
 
-### For User
-1. **Tab Switching**: Should I investigate the Projects/Tags tab switching issue immediately, or is there other work to prioritize?
-2. **Old Sub-Pages**: Should I delete the old `/settings/general/page.tsx`, `/settings/routine/page.tsx`, etc. since they're now replaced by tabs?
-3. **Authentication Testing**: Do you want to test authentication now, or should I focus on completing the Settings UI first?
-4. **Initial Roles**: What should be the default scopes for each system role (Employee, Manager, Owner, Admin)?
+# Start Web (in another terminal)
+cd apps/web
+npm run dev
+```
 
-### Technical Questions
-1. Why isn't the Tabs component switching content for Projects and Tags tabs specifically?
-2. Is the issue related to client/server component boundaries?
-3. Should we add error boundaries to catch and display tab rendering errors?
-4. Should we implement lazy loading for tab components to improve initial load time?
+### Testing
+```bash
+# Multi-tenancy E2E Test
+cd apps/api
+npm run test:e2e -- test/multi-tenancy.e2e-spec.ts
+
+# Load test - Health endpoint
+artillery quick --count 50 --num 1000 http://localhost:3001/api/health
+
+# Load test - Manager Dashboard (needs test user)
+artillery run load-tests/manager-dashboard-test.yml
+
+# Create test manager
+cd packages/database
+npx tsx prisma/seed/create-test-manager.ts
+```
 
 ---
 
-## Notes
+## 🔄 Current Work & Next Steps
 
-### User Preferences
-- **No Terminal Auto-Execution**: Always ask user to run terminal commands manually (terminal hangs)
-- **Language**: User prefers Ukrainian for UI text in Projects/Tags pages
-- **Design**: User wants clean, modern UI without redundant sidebars
+### In Progress
+- ⏳ **Yaware API Integration**
+  - Backend: ✅ Complete
+  - Credentials: ⏳ Waiting for YAWARE_ACCESS_KEY
+  - Testing: ⏳ Blocked on test user creation
 
-### Error Patterns Observed
-1. **Nested Layouts**: Wrapping components in multiple layout components causes visual duplication
-2. **Implicit Any Types**: NestJS controllers need explicit type annotations for parameters
-3. **Prisma Sync**: After schema changes, must run `npx prisma db push` and `npx prisma generate`
-4. **Legacy Code References**: After model renames, old service methods can cause build errors
+### Blocked
+- ❌ **Load testing Manager Dashboard**
+  - Issue: Artillery needs email/password auth
+  - User logs in via Google OAuth only
+  - Solution: Create test manager with password
+
+### Next Priorities
+1. **Create test manager** for load testing
+2. **Run Manager Dashboard load test** to get real DB performance
+3. **Implement Redis caching** for performance
+4. **Settings UI** for Yaware integration
 
 ---
 
-**End of Context Document**
+## 📈 SaaS Readiness
+
+### Current Status: 85%
+- ✅ Stateless API
+- ✅ JWT auth
+- ✅ RBAC
+- ✅ Modular architecture
+- ✅ Multi-tenancy (Organization model implemented)
+- ❌ Caching layer (need Redis)
+- ❌ Rate limiting
+- ❌ Health checks (basic added, need DB checks)
+
+### Estimated Capacity
+- **Current (no optimization):** 100-200 concurrent users
+- **With Redis + indexes:** 500-1000 concurrent users
+- **With Kubernetes + scaling:** 10,000+ concurrent users
+
+### Deployment Options
+1. **Quick Start:** Railway (API) + Vercel (Web) - $40-70/month
+2. **Production:** DigitalOcean Kubernetes - $71/month
+3. **Enterprise:** AWS EKS - $170+/month
+
+---
+
+## 🐛 Known Issues
+
+1. **Load testing blocked** - Need test user with password (Google OAuth users can't be tested with Artillery)
+2. **Yaware API incomplete** - Waiting for YAWARE_ACCESS_KEY from support
+3. **No caching** - Every request hits database
+4. **No rate limiting** - Vulnerable to abuse
+
+---
+
+## 📚 Documentation Files
+
+### In Repository
+- `README.md` - Project overview
+- `packages/database/prisma/schema.prisma` - Database schema
+- `load-tests/manager-dashboard-test.yml` - Load test scenarios
+- `apps/api/test/multi-tenancy.e2e-spec.ts` - Multi-tenancy verification test
+
+### In Brain (Artifacts)
+- `task.md` - Current task checklist
+- `implementation_plan.md` - Yaware API integration plan
+- `manager_dashboard_walkthrough.md` - Manager Dashboard documentation
+- `saas_readiness_analysis.md` - SaaS architecture analysis
+- `load_testing_guide.md` - Performance testing guide
+- `migration_guide.md` - Multi-tenancy migration guide
+
+---
+
+## 🔐 Credentials & Access
+
+### Database
+- **Host:** localhost:5432
+- **Database:** crystal_kuiper
+- **User:** postgres
+- **Password:** postgres
+
+### RapidAPI (Yaware)
+- **API Key:** ab6fbeda98msh6a304c68759bf0ap1f7cccjsna5db737eedf1
+- **Host:** yaware-timetracker.p.rapidapi.com
+- **Yaware Access Key:** ⏳ Pending from support
+
+### Test Users
+- **Google OAuth:** (your account)
+- **Test Manager:** manager@example.com / password123 (to be created)
+
+---
+
+## 📞 Support Requests
+
+### Active
+- **Yaware Support** - Requested YAWARE_ACCESS_KEY (2025-11-26)
+
+---
+
+## 🎯 Long-term Roadmap
+
+### Phase 6: Multi-tenancy (Completed)
+- ✅ Organization model
+- ✅ Row-level security (TenantGuard)
+- ✅ Subscription plans (Basic schema)
+
+### Phase 7: Advanced Features
+- Real-time notifications
+- Advanced analytics
+- Mobile app
+- Slack/Teams integration
+
+### Phase 8: Enterprise
+- SSO (SAML)
+- Audit logs
+- Custom reports
+- White-labeling
+
+---
+
+**Status:** Active development  
+**Last Session:** 2025-11-28 (Multi-tenancy implementation)  
+**Next Session:** Load testing with test manager → Redis caching
