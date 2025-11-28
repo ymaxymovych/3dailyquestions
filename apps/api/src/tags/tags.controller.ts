@@ -3,19 +3,21 @@ import { AuthGuard } from '@nestjs/passport';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 
-@UseGuards(AuthGuard('jwt'))
+import { TenantGuard } from '../common/guards/tenant.guard';
+
+@UseGuards(AuthGuard('jwt'), TenantGuard)
 @Controller('tags')
 export class TagsController {
     constructor(private readonly tagsService: TagsService) { }
 
     @Post()
     create(@Request() req: any, @Body() dto: CreateTagDto) {
-        return this.tagsService.create(req.user.userId, dto);
+        return this.tagsService.create(req.user.userId, req.organizationId, dto);
     }
 
     @Get()
     findAll(@Request() req: any) {
-        return this.tagsService.findAll(req.user.userId);
+        return this.tagsService.findAll(req.user.userId, req.organizationId);
     }
 
     @Get(':id')

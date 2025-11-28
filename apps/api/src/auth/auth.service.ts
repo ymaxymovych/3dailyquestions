@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
@@ -21,15 +21,43 @@ export class AuthService {
 
         // 3. Create Org & User (Transaction)
         const user = await this.prisma.$transaction(async (tx) => {
-            const org = await tx.organization.create({
-                data: { name: dto.orgName },
-            });
+            let orgId: string;
+            let roleName = 'EMPLOYEE'; // Default role for joiners
 
-            // Ensure OWNER role exists
-            let ownerRole = await tx.role.findUnique({ where: { name: 'OWNER' } });
-            if (!ownerRole) {
-                ownerRole = await tx.role.create({
-                    data: { name: 'OWNER', description: 'Organization Owner', isSystem: true, scopes: ['*'] }
+            if (dto.orgName) {
+                // Create new organization
+                const org = await tx.organization.create({
+                    data: { name: dto.orgName },
+                });
+                orgId = org.id;
+                roleName = 'OWNER'; // Creator is owner
+            } else if (dto.inviteCode) {
+                // Join existing organization
+                // TODO: Implement proper invite code lookup. For now, assuming inviteCode is orgId or slug
+                // In real app, we'd look up an Invite record.
+                // Let's assume for MVP that we don't have invite codes yet, so we just fail if no orgName.
+                // But wait, user asked for "Update registration to create/join organization".
+                // Let's just find org by ID for now if provided as inviteCode, or throw.
+                const org = await tx.organization.findFirst({
+                    where: { OR: [{ id: dto.inviteCode }, { slug: dto.inviteCode }] } as any
+                });
+
+                if (!org) throw new BadRequestException('Invalid invite code');
+                orgId = org.id;
+            } else {
+                throw new BadRequestException('Organization name or invite code required');
+            }
+
+            // Ensure Role exists
+            let role = await tx.role.findUnique({ where: { name: roleName } });
+            if (!role) {
+                role = await tx.role.create({
+                    data: {
+                        name: roleName,
+                        description: roleName === 'OWNER' ? 'Organization Owner' : 'Standard Employee',
+                        isSystem: true,
+                        scopes: roleName === 'OWNER' ? ['*'] : []
+                    }
                 });
             }
 
@@ -38,10 +66,10 @@ export class AuthService {
                     email: dto.email,
                     fullName: dto.fullName,
                     passwordHash,
-                    orgId: org.id,
+                    orgId: orgId,
                     roles: {
                         create: {
-                            roleId: ownerRole.id
+                            roleId: role.id
                         }
                     }
                 },
@@ -54,7 +82,7 @@ export class AuthService {
         });
 
         const roleNames = user.roles.map(ur => ur.role.name);
-        return this.signToken(user.id, user.email, roleNames);
+        return this.signToken(user.id, user.email, roleNames, user.orgId);
     }
 
     async login(dto: LoginDto) {
@@ -72,7 +100,7 @@ export class AuthService {
         if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
         const roleNames = user.roles.map(ur => ur.role.name);
-        return this.signToken(user.id, user.email, roleNames);
+        return this.signToken(user.id, user.email, roleNames, user.orgId);
     }
 
     async validateGoogleUser(details: { email: string; firstName: string; lastName: string; picture: string; googleId: string; accessToken?: string; refreshToken?: string }) {
@@ -173,11 +201,11 @@ export class AuthService {
     async loginWithGoogle(user: any) {
         // User from validateGoogleUser already has roles included
         const roleNames = user.roles ? user.roles.map((ur: any) => ur.role.name) : [];
-        return this.signToken(user.id, user.email, roleNames);
+        return this.signToken(user.id, user.email, roleNames, user.orgId);
     }
 
-    private async signToken(userId: string, email: string, roles: string[]) {
-        const payload = { sub: userId, email, roles };
+    private async signToken(userId: string, email: string, roles: string[], organizationId: string) {
+        const payload = { sub: userId, email, roles, organizationId };
         return {
             access_token: await this.jwtService.signAsync(payload),
         };

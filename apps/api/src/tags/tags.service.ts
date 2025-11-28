@@ -6,25 +6,19 @@ import { CreateTagDto } from './dto/create-tag.dto';
 export class TagsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(userId: string, dto: CreateTagDto) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new NotFoundException('User not found');
-
+    async create(userId: string, organizationId: string, dto: CreateTagDto) {
         return this.prisma.tag.create({
             data: {
                 name: dto.name,
                 color: dto.color || '#808080',
-                orgId: user.orgId,
+                orgId: organizationId,
             },
         });
     }
 
-    async findAll(userId: string) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new NotFoundException('User not found');
-
+    async findAll(userId: string, organizationId: string) {
         return this.prisma.tag.findMany({
-            where: { orgId: user.orgId },
+            where: { orgId: organizationId },
             orderBy: { name: 'asc' },
         });
     }

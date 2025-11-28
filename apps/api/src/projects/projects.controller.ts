@@ -3,19 +3,21 @@ import { AuthGuard } from '@nestjs/passport';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 
-@UseGuards(AuthGuard('jwt'))
+import { TenantGuard } from '../common/guards/tenant.guard';
+
+@UseGuards(AuthGuard('jwt'), TenantGuard)
 @Controller('projects')
 export class ProjectsController {
     constructor(private readonly projectsService: ProjectsService) { }
 
     @Post()
     create(@Request() req: any, @Body() dto: CreateProjectDto) {
-        return this.projectsService.create(req.user.userId, dto);
+        return this.projectsService.create(req.user.userId, req.organizationId, dto);
     }
 
     @Get()
     findAll(@Request() req: any) {
-        return this.projectsService.findAll(req.user.userId);
+        return this.projectsService.findAll(req.user.userId, req.organizationId);
     }
 
     @Get(':id')

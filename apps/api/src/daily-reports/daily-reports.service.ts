@@ -1,48 +1,45 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDailyReportDto } from './dto/create-daily-report.dto';
 import { UpdateDailyReportDto } from './dto/update-daily-report.dto';
-import { ProfileService } from '../user-admin/profile.service';
-import { KpiService } from '../user-admin/kpi.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class DailyReportsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly profileService: ProfileService,
-    private readonly kpiService: KpiService,
+    private prisma: PrismaService,
+    private usersService: UsersService,
   ) { }
 
-  async create(userId: string, dto: CreateDailyReportDto) {
-    // Check if report for this date already exists
-    const existing = await this.prisma.dailyReport.findUnique({
-      where: { userId_date: { userId, date: new Date(dto.date) } },
+  async create(userId: string, organizationId: string, dto: CreateDailyReportDto) {
+    // Check if report already exists for today
+    const existingReport = await this.prisma.dailyReport.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: new Date(dto.date),
+        },
+      },
     });
 
-    if (existing) {
-      throw new ConflictException('Report for this date already exists');
+    if (existingReport) {
+      throw new BadRequestException('Report for this date already exists');
     }
 
-    // Get user's manager as default assignee for help requests
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { department: true },
-    });
+    // Get user to check org
+    const user = await this.usersService.findOne(userId);
+    // Verify user belongs to organization
+    if (user?.orgId !== organizationId) {
+      throw new ForbiddenException('User does not belong to this organization');
+    }
 
     const managerId = user?.department?.managerId || userId; // Fallback to self
 
-    // Fetch User KPIs to pre-fill notes if empty
-    let todayNote = dto.todayNote;
-    if (!todayNote) {
-      const kpis = await this.kpiService.getUserKpis(userId);
-      if (kpis.length > 0) {
-        todayNote = "KPI Targets:\n" + kpis.map(k => `- ${k.definition.name}: ${k.targetValue} ${k.definition.unit}`).join('\n');
-      }
-    }
-
+    // Create report
     return this.prisma.dailyReport.create({
       data: {
         userId,
+        orgId: organizationId,
         date: new Date(dto.date),
         yesterdayBig: dto.yesterdayBig as any,
         yesterdayMedium: dto.yesterdayMedium as any,
@@ -51,37 +48,46 @@ export class DailyReportsService {
         todayBig: dto.todayBig as any,
         todayMedium: dto.todayMedium as any,
         todaySmall: dto.todaySmall as any,
-        todayNote: todayNote,
+        todayNote: dto.todayNote,
         mood: dto.mood,
         wellbeing: dto.wellbeing,
         moodComment: dto.moodComment,
+        status: dto.status || 'DRAFT',
+        publishedAt: dto.status === 'PUBLISHED' ? new Date() : null,
         helpRequests: {
           create: dto.helpRequests?.map((hr) => ({
             text: hr.text,
             link: hr.link,
             assigneeId: hr.assigneeId || managerId,
-            dueDate: hr.dueDate ? new Date(hr.dueDate) : new Date(Date.now() + 86400000),
+            dueDate: hr.dueDate ? new Date(hr.dueDate) : new Date(),
             priority: hr.priority || 'MEDIUM',
-          })) || [],
+          })),
         },
         kpis: {
-          create: dto.kpis?.map((k) => ({
-            kpiCode: k.kpiCode,
-            value: k.value,
-            goal: k.goal,
-            comment: k.comment,
-          })) || [],
+          create: dto.kpis?.map((kpi) => ({
+            kpiCode: kpi.kpiCode,
+            value: kpi.value,
+            goal: kpi.goal,
+            comment: kpi.comment,
+          })),
         },
       },
-      include: { helpRequests: true, kpis: true },
     });
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string, organizationId: string) {
     return this.prisma.dailyReport.findMany({
-      where: { userId },
-      orderBy: { date: 'desc' },
-      include: { helpRequests: true, kpis: true },
+      where: {
+        userId,
+        orgId: organizationId
+      },
+      orderBy: {
+        date: 'desc',
+      },
+      include: {
+        helpRequests: true,
+        kpis: true,
+      },
     });
   }
 
@@ -130,12 +136,8 @@ export class DailyReportsService {
         comment: null
       })) || [];
 
-      // Legacy KPI support (optional, can be removed if fully switched)
-      const legacyKpis = await this.kpiService.getUserKpis(userId);
+      // Legacy KPI support removed
       let defaultTodayNote = '';
-      if (legacyKpis.length > 0) {
-        defaultTodayNote = "KPI Targets:\n" + legacyKpis.map(k => `- ${k.definition.name}: ${k.targetValue} ${k.definition.unit}`).join('\n');
-      }
 
       return {
         userId,

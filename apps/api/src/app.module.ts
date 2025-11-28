@@ -12,6 +12,8 @@ import { UserSettingsModule } from './user-settings/user-settings.module';
 import { UserAdminModule } from './user-admin/user-admin.module';
 import { RoleArchetypesModule } from './role-archetypes/role-archetypes.module';
 import { ManagerDashboardModule } from './manager-dashboard/manager-dashboard.module';
+import { HealthModule } from './health/health.module';
+import { OrganizationModule } from './organization/organization.module';
 
 import { ConfigModule } from '@nestjs/config';
 
@@ -29,6 +31,8 @@ import { ConfigModule } from '@nestjs/config';
     UserAdminModule,
     RoleArchetypesModule,
     ManagerDashboardModule,
+    HealthModule,
+    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

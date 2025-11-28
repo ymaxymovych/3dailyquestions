@@ -4,14 +4,16 @@ import { DailyReportsService } from './daily-reports.service';
 import { CreateDailyReportDto } from './dto/create-daily-report.dto';
 import { UpdateDailyReportDto } from './dto/update-daily-report.dto';
 
-@UseGuards(AuthGuard('jwt'))
+import { TenantGuard } from '../common/guards/tenant.guard';
+
+@UseGuards(AuthGuard('jwt'), TenantGuard)
 @Controller('daily-reports')
 export class DailyReportsController {
-  constructor(private readonly dailyReportsService: DailyReportsService) {}
+  constructor(private readonly dailyReportsService: DailyReportsService) { }
 
   @Post()
   create(@Request() req: any, @Body() dto: CreateDailyReportDto) {
-    return this.dailyReportsService.create(req.user.userId, dto);
+    return this.dailyReportsService.create(req.user.userId, req.organizationId, dto);
   }
 
   @Get()
@@ -19,7 +21,7 @@ export class DailyReportsController {
     if (date) {
       return this.dailyReportsService.findByDate(req.user.userId, date);
     }
-    return this.dailyReportsService.findAll(req.user.userId);
+    return this.dailyReportsService.findAll(req.user.userId, req.organizationId);
   }
 
   @Get(':id')

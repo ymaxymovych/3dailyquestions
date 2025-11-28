@@ -2,8 +2,10 @@ import { Controller, Get, Query, Param, UseGuards, Request } from '@nestjs/commo
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ManagerDashboardService } from './manager-dashboard.service';
 
+import { TenantGuard } from '../common/guards/tenant.guard';
+
 @Controller('manager-dashboard')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TenantGuard)
 export class ManagerDashboardController {
     constructor(private readonly dashboardService: ManagerDashboardService) { }
 
@@ -16,6 +18,7 @@ export class ManagerDashboardController {
         @Query('hasBigTask') hasBigTask?: string,
     ) {
         const managerId = req.user.userId;
+        const organizationId = req.organizationId;
         const reportDate = date || new Date().toISOString().split('T')[0];
 
         const filters = {
@@ -24,7 +27,7 @@ export class ManagerDashboardController {
             hasBigTask: hasBigTask === 'true' ? true : hasBigTask === 'false' ? false : undefined,
         };
 
-        return this.dashboardService.getTeamReports(managerId, reportDate, filters);
+        return this.dashboardService.getTeamReports(managerId, organizationId, reportDate, filters);
     }
 
     @Get('summary')
@@ -33,9 +36,10 @@ export class ManagerDashboardController {
         @Query('date') date?: string,
     ) {
         const managerId = req.user.userId;
+        const organizationId = req.organizationId;
         const reportDate = date || new Date().toISOString().split('T')[0];
 
-        return this.dashboardService.getTeamSummary(managerId, reportDate);
+        return this.dashboardService.getTeamSummary(managerId, organizationId, reportDate);
     }
 
     @Get('employee/:userId/history')

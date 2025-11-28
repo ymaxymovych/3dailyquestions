@@ -14,14 +14,17 @@ export class ManagerDashboardService {
     /**
      * Get team reports for a specific date
      */
-    async getTeamReports(managerId: string, date: string, filters?: {
+    async getTeamReports(managerId: string, organizationId: string, date: string, filters?: {
         status?: 'submitted' | 'not_submitted' | 'all';
         hasHelpRequest?: boolean;
         hasBigTask?: boolean;
     }) {
-        // Find departments where user is manager
+        // Find departments where user is manager AND in the same organization
         const departments = await this.prisma.department.findMany({
-            where: { managerId },
+            where: {
+                managerId,
+                orgId: organizationId
+            },
             include: {
                 users: {
                     include: {
@@ -41,6 +44,7 @@ export class ManagerDashboardService {
         const reports = await this.prisma.dailyReport.findMany({
             where: {
                 userId: { in: teamUserIds },
+                orgId: organizationId, // Ensure reports belong to the same org
                 date: new Date(date),
             },
             include: {
@@ -61,7 +65,7 @@ export class ManagerDashboardService {
         const teamReports = await Promise.all(
             departments.flatMap(dept =>
                 dept.users.map(async (user) => {
-                    const report = reportMap.get(user.id);
+                    const report = reportMap.get(user.id) as any; // Cast to any to handle relations
                     const hasBigTask = report?.todayBig && Array.isArray(report.todayBig) && report.todayBig.length > 0;
                     const hasHelpRequest = report?.helpRequests && report.helpRequests.length > 0;
                     const status = report ? 'submitted' : 'not_submitted';
@@ -137,8 +141,8 @@ export class ManagerDashboardService {
     /**
      * Get team summary statistics
      */
-    async getTeamSummary(managerId: string, date: string) {
-        const teamReports = await this.getTeamReports(managerId, date);
+    async getTeamSummary(managerId: string, organizationId: string, date: string) {
+        const teamReports = await this.getTeamReports(managerId, organizationId, date);
 
         const totalMembers = teamReports.length;
         const submitted = teamReports.filter(r => r.status === 'submitted').length;

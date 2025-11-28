@@ -6,27 +6,21 @@ import { CreateProjectDto } from './dto/create-project.dto';
 export class ProjectsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(userId: string, dto: CreateProjectDto) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new NotFoundException('User not found');
-
+    async create(userId: string, organizationId: string, dto: CreateProjectDto) {
         return this.prisma.project.create({
             data: {
                 name: dto.name,
                 description: dto.description,
                 status: dto.status,
-                orgId: user.orgId,
+                orgId: organizationId,
                 ownerId: userId,
             },
         });
     }
 
-    async findAll(userId: string) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new NotFoundException('User not found');
-
+    async findAll(userId: string, organizationId: string) {
         return this.prisma.project.findMany({
-            where: { orgId: user.orgId },
+            where: { orgId: organizationId },
             orderBy: { name: 'asc' },
         });
     }

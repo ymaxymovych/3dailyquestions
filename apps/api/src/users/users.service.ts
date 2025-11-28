@@ -5,9 +5,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
     constructor(private prisma: PrismaService) { }
 
-    async findOne(id: string) {
-        return this.prisma.user.findUnique({
-            where: { id },
+    async findOne(id: string, organizationId?: string) {
+        return this.prisma.user.findFirst({
+            where: {
+                id,
+                ...(organizationId && { organizationId })
+            },
             include: {
                 org: true,
                 department: true,

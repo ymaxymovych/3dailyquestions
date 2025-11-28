@@ -162,6 +162,10 @@ export class CreateDailyReportDto {
   @IsOptional()
   moodComment?: string;
 
+  @IsEnum(['DRAFT', 'PUBLISHED'])
+  @IsOptional()
+  status?: 'DRAFT' | 'PUBLISHED';
+
   // KPIs
   @IsArray()
   @ValidateNested({ each: true })
