@@ -11,17 +11,17 @@ export class MyDayController {
 
     @Get(':date')
     async getPlan(@Req() req: any, @Param('date') date: string) {
-        return this.myDayService.getOrCreatePlan(req.user.id, date);
+        return this.myDayService.getOrCreatePlan(req.user.userId, date);
     }
 
     @Put(':date')
     async updatePlan(@Req() req: any, @Param('date') date: string, @Body() dto: UpdatePlanDto) {
-        return this.myDayService.updatePlanText(req.user.id, date, dto.text);
+        return this.myDayService.updatePlanText(req.user.userId, date, dto.text);
     }
 
     @Get(':date/load-status')
     async getLoadStatus(@Req() req: any, @Param('date') date: string) {
-        const plan = await this.myDayService.getOrCreatePlan(req.user.id, date);
+        const plan = await this.myDayService.getOrCreatePlan(req.user.userId, date);
         return this.myDayService.calculateLoad(plan as any);
     }
 }
