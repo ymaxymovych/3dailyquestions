@@ -18,6 +18,7 @@ import { SeederModule } from './seeder/seeder.module';
 import { CommonModule } from './common/common.module';
 import { YawareModule } from './integrations/yaware/yaware.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { MyDayModule } from './my-day/my-day.module';
 
 import { ConfigModule } from '@nestjs/config';
 
@@ -40,7 +41,9 @@ import { ConfigModule } from '@nestjs/config';
     OrganizationModule,
     SeederModule,
     YawareModule,
+    YawareModule,
     DepartmentsModule,
+    MyDayModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,6 +7,7 @@ import { LayoutDashboard, FileText, Settings, FolderKanban, Users } from 'lucide
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/my-day', label: 'My Day', icon: FileText },
     { href: '/daily-report', label: 'My Reports', icon: FileText },
     { href: '/daily-report/team', label: 'Team Pulse', icon: Users },
     { href: '/dashboard/manager', label: 'Manager Dashboard', icon: FolderKanban },

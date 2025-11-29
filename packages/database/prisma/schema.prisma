@@ -136,6 +136,7 @@ model User {
   helpRequestsAssigned HelpRequest[] @relation("HelpRequestsAssigned")
   dailyReportReactions DailyReportReaction[]
   dailyReportComments  DailyReportComment[]
+  dailyPlans           DailyPlan[]           @relation("UserDailyPlans")
 
   // User Settings & Admin Module
   profile         UserProfile?
@@ -636,4 +637,73 @@ model KPITemplate {
   updatedAt         DateTime @updatedAt
   
   @@map("kpi_templates")
+}
+
+// --- My Day Feature ---
+
+model DailyPlan {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserDailyPlans", fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  rawText   String   @db.Text // Original text from editor
+  
+  // Parsed data
+  tasks     DailyTask[]
+  metrics   DailyMetric[]
+  
+  // Load calculation
+  loadStatus          LoadStatus @default(BALANCED)
+  loadManuallySet     Boolean    @default(false)
+  effectiveCapacity   Int?       // minutes
+  totalLoad           Int?       // minutes
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, date])
+  @@map("daily_plans")
+}
+
+model DailyTask {
+  id              String   @id @default(uuid())
+  planId          String
+  plan            DailyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  type            TaskType
+  title           String
+  estimateMinutes Int      @default(0)
+  plannedStart    DateTime?
+  plannedEnd      DateTime?
+  rawLine         String   // Original text line
+  
+  createdAt DateTime @default(now())
+  
+  @@map("daily_tasks")
+}
+
+model DailyMetric {
+  id      String   @id @default(uuid())
+  planId  String
+  plan    DailyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  
+  scope   MetricScope // YESTERDAY or TODAY_PLAN
+  name    String
+  value   Float
+  comment String?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("daily_metrics")
+}
+
+enum TaskType {
+  BIG
+  MEDIUM
+  SMALL
+}
+
+enum MetricScope {
+  YESTERDAY
+  TODAY_PLAN
 }
