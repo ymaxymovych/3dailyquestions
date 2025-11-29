@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ValidateNested, IsInt, IsNumber, IsDateString, Min, Max, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsArray, ValidateNested, IsInt, IsNumber, IsDateString, Min, Max, IsEnum, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Task DTOs
@@ -165,6 +165,18 @@ export class CreateDailyReportDto {
   @IsEnum(['DRAFT', 'PUBLISHED'])
   @IsOptional()
   status?: 'DRAFT' | 'PUBLISHED';
+
+  @IsOptional()
+  @IsString()
+  visibility?: 'PUBLIC' | 'TEAM' | 'PRIVATE';
+
+  @IsOptional()
+  @IsString()
+  loadStatus?: 'BALANCED' | 'OVERLOADED' | 'UNDERLOADED';
+
+  @IsOptional()
+  @IsBoolean()
+  loadManuallySet?: boolean;
 
   // KPIs
   @IsArray()

@@ -134,6 +134,8 @@ model User {
   activities   Activity[]
   projectsOwned Project[]
   helpRequestsAssigned HelpRequest[] @relation("HelpRequestsAssigned")
+  dailyReportReactions DailyReportReaction[]
+  dailyReportComments  DailyReportComment[]
 
   // User Settings & Admin Module
   profile         UserProfile?
@@ -426,6 +428,18 @@ enum HelpStatus {
   OVERDUE
 }
 
+enum ReportVisibility {
+  PUBLIC
+  TEAM
+  PRIVATE
+}
+
+enum LoadStatus {
+  BALANCED
+  OVERLOADED
+  UNDERLOADED
+}
+
 model DailyReport {
   id          String   @id @default(uuid())
   date        DateTime @db.Date
@@ -454,6 +468,15 @@ model DailyReport {
   
   status          ReportStatus @default(DRAFT)
   publishedAt     DateTime?
+  
+  // Team View Fields
+  visibility      ReportVisibility @default(TEAM)
+  loadStatus      LoadStatus       @default(BALANCED)
+  loadManuallySet Boolean          @default(false)
+  
+  reactions       DailyReportReaction[]
+  comments        DailyReportComment[]
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -463,6 +486,31 @@ model DailyReport {
   @@unique([userId, date])
   @@index([orgId])
   @@index([orgId, date])
+}
+
+model DailyReportReaction {
+  id        String      @id @default(uuid())
+  reportId  String
+  report    DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String      // "👍", "👏", "🤝", "💡"
+  
+  createdAt DateTime    @default(now())
+  
+  @@unique([reportId, userId, emoji])
+}
+
+model DailyReportComment {
+  id        String      @id @default(uuid())
+  reportId  String
+  report    DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model DailyReportKPI {

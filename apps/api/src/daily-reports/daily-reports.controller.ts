@@ -43,4 +43,39 @@ export class DailyReportsController {
   delete(@Request() req: any, @Param('id') id: string) {
     return this.dailyReportsService.delete(req.user.userId, id);
   }
+
+  // ==================== TEAM VIEW ENDPOINTS ====================
+
+  @Get('team/feed')
+  getTeamFeed(@Request() req: any, @Query('date') date?: string) {
+    return this.dailyReportsService.findAllByTeam(req.user.userId, req.organizationId, date);
+  }
+
+  @Post(':id/reaction')
+  addReaction(@Request() req: any, @Param('id') id: string, @Body() body: { emoji: string }) {
+    return this.dailyReportsService.addReaction(req.user.userId, id, body.emoji);
+  }
+
+  @Post(':id/comment')
+  addComment(@Request() req: any, @Param('id') id: string, @Body() body: { text: string }) {
+    return this.dailyReportsService.addComment(req.user.userId, id, body.text);
+  }
+
+  @Patch(':id/manager/big-task')
+  updateBigTask(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { newBigTask: any; comment: string },
+  ) {
+    return this.dailyReportsService.updateBigTask(req.user.userId, id, body.newBigTask, body.comment);
+  }
+
+  @Patch(':id/manager/load-status')
+  setLoadStatus(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { loadStatus: 'BALANCED' | 'OVERLOADED' | 'UNDERLOADED' },
+  ) {
+    return this.dailyReportsService.setLoadStatus(req.user.userId, id, body.loadStatus);
+  }
 }

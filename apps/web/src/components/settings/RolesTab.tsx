@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -377,9 +377,9 @@ export function RolesTab() {
                                 {/* Body with permissions */}
                                 <tbody>
                                     {PERMISSION_CATEGORIES.map((category, catIndex) => (
-                                        <>
+                                        <Fragment key={`category-${catIndex}`}>
                                             {/* Category header */}
-                                            <tr key={`cat-${catIndex}`}>
+                                            <tr>
                                                 <td
                                                     colSpan={roles.length + 1}
                                                     className="p-3 bg-muted/50 border-b font-medium text-sm sticky left-0 z-10"
@@ -434,7 +434,7 @@ export function RolesTab() {
                                                     })}
                                                 </tr>
                                             ))}
-                                        </>
+                                        </Fragment>
                                     ))}
                                 </tbody>
                             </table>

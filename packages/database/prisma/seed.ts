@@ -302,6 +302,142 @@ async function main() {
     });
     console.log(`✅ Created/Updated role: ${owner.name} (${owner.scopes.length} permissions)`);
 
+    // ==================== TEAM VIEW TEST DATA ====================
+    console.log('\n🧪 Creating Team View test data...');
+
+    // Create test organization
+    const testOrg = await prisma.organization.upsert({
+        where: { slug: 'test-company' },
+        update: {},
+        create: {
+            name: 'Test Company',
+            slug: 'test-company',
+            plan: 'pro',
+            status: 'active',
+            maxUsers: 50,
+            domains: ['test.com'],
+        },
+    });
+    console.log(`✅ Created organization: ${testOrg.name}`);
+
+    // Create Sales department
+    const salesDept = await prisma.department.create({
+        data: {
+            name: 'Sales',
+            orgId: testOrg.id,
+        },
+    });
+    console.log(`✅ Created department: ${salesDept.name}`);
+
+    // Create manager user
+    const managerUser = await prisma.user.create({
+        data: {
+            email: 'manager@test.com',
+            fullName: 'Alex Manager',
+            passwordHash: '$2a$10$K7L/aOXqVqJ5Y5Y5Y5Y5YuN5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y', // password123
+            orgId: testOrg.id,
+            deptId: salesDept.id,
+            status: 'ACTIVE',
+        },
+    });
+    await prisma.userRole.create({
+        data: {
+            userId: managerUser.id,
+            roleId: (await prisma.role.findUnique({ where: { name: 'MANAGER' } }))!.id,
+        },
+    });
+
+    // Update department with manager
+    await prisma.department.update({
+        where: { id: salesDept.id },
+        data: { managerId: managerUser.id },
+    });
+    console.log(`✅ Created manager: ${managerUser.fullName}`);
+
+    // Create 4 team members
+    const teamMembers = [];
+    const names = ['John Smith', 'Sarah Johnson', 'Mike Chen', 'Emma Davis'];
+
+    for (const name of names) {
+        const user = await prisma.user.create({
+            data: {
+                email: `${name.toLowerCase().replace(' ', '.')}@test.com`,
+                fullName: name,
+                passwordHash: '$2a$10$K7L/aOXqVqJ5Y5Y5Y5Y5YuN5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y', // password123
+                orgId: testOrg.id,
+                deptId: salesDept.id,
+                status: 'ACTIVE',
+            },
+        });
+        await prisma.userRole.create({
+            data: {
+                userId: user.id,
+                roleId: employee.id,
+            },
+        });
+        teamMembers.push(user);
+        console.log(`✅ Created employee: ${user.fullName}`);
+    }
+
+    // Create daily reports for today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const bigTasks = [
+        'Close deal with Acme Corp ($50k)',
+        'Prepare Q4 sales presentation',
+        'Follow up with 10 warm leads',
+        'Update CRM with last week\'s calls',
+    ];
+
+    const loadStatuses: ('BALANCED' | 'OVERLOADED' | 'UNDERLOADED')[] = ['BALANCED', 'OVERLOADED', 'BALANCED', 'UNDERLOADED'];
+
+    for (let i = 0; i < teamMembers.length; i++) {
+        const report = await prisma.dailyReport.create({
+            data: {
+                userId: teamMembers[i].id,
+                orgId: testOrg.id,
+                date: today,
+                status: 'PUBLISHED',
+                publishedAt: new Date(),
+                visibility: 'TEAM',
+                loadStatus: loadStatuses[i],
+                todayBig: { text: bigTasks[i] },
+                todayMedium: [
+                    { text: 'Send follow-up emails' },
+                    { text: 'Update sales pipeline' },
+                ],
+                yesterdayBig: { text: 'Completed client demo' },
+            },
+        });
+
+        // Add blocker for one employee
+        if (i === 1) {
+            await prisma.helpRequest.create({
+                data: {
+                    reportId: report.id,
+                    text: 'Waiting for legal approval on contract',
+                    assigneeId: managerUser.id,
+                    dueDate: new Date(Date.now() + 86400000), // tomorrow
+                    priority: 'HIGH',
+                },
+            });
+        }
+
+        // Add reactions
+        if (i < 2) {
+            await prisma.dailyReportReaction.create({
+                data: {
+                    reportId: report.id,
+                    userId: managerUser.id,
+                    emoji: '👍',
+                },
+            });
+        }
+
+        console.log(`✅ Created daily report for: ${teamMembers[i].fullName}`);
+    }
+
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📊 Created roles with permissions:');
     console.log(`  - EMPLOYEE: ${employee.scopes.length} permissions`);
@@ -309,6 +445,14 @@ async function main() {
     console.log(`  - HR: ${hr.scopes.length} permissions`);
     console.log(`  - ADMIN: ${admin.scopes.length} permissions`);
     console.log(`  - OWNER: ${owner.scopes.length} permissions`);
+    console.log('\n🧪 Team View Test Data:');
+    console.log(`  - Organization: ${testOrg.name}`);
+    console.log(`  - Department: ${salesDept.name}`);
+    console.log(`  - Manager: ${managerUser.fullName} (manager@test.com)`);
+    console.log(`  - Team Members: ${teamMembers.length}`);
+    console.log(`  - Daily Reports: ${teamMembers.length}`);
+    console.log('\n🔑 Login with: manager@test.com (or any team member email)');
+    console.log('📍 Navigate to: /daily-report/team');
 }
 
 main()

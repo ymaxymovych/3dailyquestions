@@ -92,11 +92,13 @@ export default function TeamPage() {
 
         // Department filter
         if (deptFilter === 'unassigned' && u.deptId !== null) return false;
-        if (deptFilter !== 'all' && deptFilter !== 'unassigned' && u.deptId !== deptFilter) return false;
+        if (deptFilter === 'assigned' && u.deptId === null) return false;
+        if (deptFilter !== 'all' && deptFilter !== 'unassigned' && deptFilter !== 'assigned' && u.deptId !== deptFilter) return false;
 
         // Role filter
         if (roleFilter === 'unassigned' && u.roleArchetype) return false;
-        if (roleFilter !== 'all' && roleFilter !== 'unassigned' && u.roleArchetype?.code !== roleFilter) return false;
+        if (roleFilter === 'assigned' && !u.roleArchetype) return false;
+        if (roleFilter !== 'all' && roleFilter !== 'unassigned' && roleFilter !== 'assigned' && u.roleArchetype?.code !== roleFilter) return false;
 
         return true;
     });
@@ -150,7 +152,10 @@ export default function TeamPage() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <Card>
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${deptFilter === 'all' && roleFilter === 'all' ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => { setDeptFilter('all'); setRoleFilter('all'); }}
+                >
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
                             Total Employees
@@ -161,23 +166,13 @@ export default function TeamPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${deptFilter === 'unassigned' ? 'ring-2 ring-amber-600' : ''}`}
+                    onClick={() => { setDeptFilter('unassigned'); setRoleFilter('all'); }}
+                >
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Assigned
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                            {users.filter(u => u.deptId).length}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Unassigned
+                            Missing Department
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -187,20 +182,38 @@ export default function TeamPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${roleFilter === 'unassigned' ? 'ring-2 ring-destructive' : ''}`}
+                    onClick={() => { setRoleFilter('unassigned'); setDeptFilter('all'); }}
+                >
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            With Roles
+                            Missing Role
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">
-                            {users.filter(u => u.roleArchetype).length}
+                        <div className="text-2xl font-bold text-destructive">
+                            {users.filter(u => !u.roleArchetype).length}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${deptFilter === 'assigned' && roleFilter === 'assigned' ? 'ring-2 ring-green-600' : ''}`}
+                    onClick={() => { setDeptFilter('assigned'); setRoleFilter('assigned'); }}
+                >
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Fully Onboarded
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">
+                            {users.filter(u => u.deptId && u.roleArchetype).length}
                         </div>
                     </CardContent>
                 </Card>
             </div>
-
             {/* Filters */}
             <Card className="mb-6">
                 <CardHeader>

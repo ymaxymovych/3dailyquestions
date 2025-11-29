@@ -24,14 +24,37 @@ export class OrganizationService {
             }
         }
 
-        // Extract domain from user email if possible (not passed here currently, but could be inferred)
-        // For now, just create.
-        return this.prisma.organization.create({
+        // Create organization
+        const org = await this.prisma.organization.create({
             data: {
                 ...dto,
                 slug,
             },
         });
+
+        // Create default departments from archetypes
+        const archetypes = await this.prisma.departmentArchetype.findMany();
+
+        if (archetypes.length > 0) {
+            await this.prisma.department.createMany({
+                data: archetypes.map(arch => ({
+                    name: arch.name,
+                    orgId: org.id,
+                    archetypeId: arch.id
+                }))
+            });
+        } else {
+            // Fallback if no archetypes seeded
+            const defaultDepts = ['Engineering', 'Marketing', 'Sales', 'Product', 'HR'];
+            await this.prisma.department.createMany({
+                data: defaultDepts.map(name => ({
+                    name,
+                    orgId: org.id
+                }))
+            });
+        }
+
+        return org;
     }
 
     async findAll() {
