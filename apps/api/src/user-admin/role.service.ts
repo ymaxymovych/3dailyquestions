@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role, UserRole } from '@repo/database';
 
@@ -14,11 +14,46 @@ export class RoleService {
         return this.prisma.role.create({ data });
     }
 
-    async updateRole(id: string, data: { description?: string; scopes?: string[] }) {
+    async updateRole(id: string, data: { name?: string; description?: string; scopes?: string[] }) {
+        // Check if role exists
+        const role = await this.prisma.role.findUnique({ where: { id } });
+        if (!role) {
+            throw new NotFoundException('Role not found');
+        }
+
+        // Prevent modification of system roles (except scopes for custom roles)
+        if (role.isSystem && data.name) {
+            throw new BadRequestException('Cannot modify system role name');
+        }
+
         return this.prisma.role.update({
             where: { id },
             data,
         });
+    }
+
+    async deleteRole(id: string) {
+        // Check if role exists
+        const role = await this.prisma.role.findUnique({ where: { id } });
+        if (!role) {
+            throw new NotFoundException('Role not found');
+        }
+
+        // Prevent deletion of system roles
+        if (role.isSystem) {
+            throw new BadRequestException('Cannot delete system roles');
+        }
+
+        // Check if role is assigned to any users
+        const userCount = await this.prisma.userRole.count({
+            where: { roleId: id }
+        });
+
+        if (userCount > 0) {
+            throw new BadRequestException(`Cannot delete role: ${userCount} user(s) still have this role`);
+        }
+
+        return this.prisma.role.delete({ where: { id } });
     }
 
     async assignRole(userId: string, roleId: string, assignedBy: string) {

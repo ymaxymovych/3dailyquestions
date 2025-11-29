@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -20,6 +20,16 @@ export class RoleController {
     @Put(':id')
     async updateRole(@Param('id') id: string, @Body() body: any) {
         return this.roleService.updateRole(id, body);
+    }
+
+    @Patch(':id')
+    async patchRole(@Param('id') id: string, @Body() body: any) {
+        return this.roleService.updateRole(id, body);
+    }
+
+    @Delete(':id')
+    async deleteRole(@Param('id') id: string) {
+        return this.roleService.deleteRole(id);
     }
 
     @Get('user/:userId')
