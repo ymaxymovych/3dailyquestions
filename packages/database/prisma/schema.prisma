@@ -137,6 +137,7 @@ model User {
   dailyReportReactions DailyReportReaction[]
   dailyReportComments  DailyReportComment[]
   dailyPlans           DailyPlan[]           @relation("UserDailyPlans")
+  threeBlocks          ThreeBlocks[]
 
   // User Settings & Admin Module
   profile         UserProfile?
@@ -706,4 +707,30 @@ enum TaskType {
 enum MetricScope {
   YESTERDAY
   TODAY_PLAN
+}
+
+// --- 3 Blocks Feature ---
+
+model ThreeBlocks {
+  id              String   @id @default(uuid())
+  userId          String
+  date            DateTime @db.Date
+  yesterdayTasks  String?  @db.Text
+  yesterdayMetrics String? @db.Text
+  todayPlan       String?  @db.Text
+  helpNeeded      String?  @db.Text
+  status          ThreeBlocksStatus   @default(DRAFT)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("three_blocks")
+}
+
+enum ThreeBlocksStatus {
+  DRAFT
+  PUBLISHED
 }
