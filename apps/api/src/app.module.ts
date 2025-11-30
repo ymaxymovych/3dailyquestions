@@ -19,7 +19,7 @@ import { CommonModule } from './common/common.module';
 import { YawareModule } from './integrations/yaware/yaware.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { MyDayModule } from './my-day/my-day.module';
-
+import { ThreeBlocksModule } from './three-blocks/three-blocks.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -41,9 +41,9 @@ import { ConfigModule } from '@nestjs/config';
     OrganizationModule,
     SeederModule,
     YawareModule,
-    YawareModule,
     DepartmentsModule,
     MyDayModule,
+    ThreeBlocksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

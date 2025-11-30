@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import './TextEditor.css';
 
 interface TextEditorProps {
     initialContent?: string;
@@ -10,29 +13,58 @@ interface TextEditorProps {
 }
 
 const TextEditor = ({ initialContent = '', onChange, className }: TextEditorProps) => {
-    const [value, setValue] = useState(initialContent);
+    const editor = useEditor({
+        extensions: [
+            StarterKit.configure({
+                heading: {
+                    levels: [1, 2, 3],
+                },
+            }),
+        ],
+        content: initialContent,
+        immediatelyRender: false,
+        editorProps: {
+            attributes: {
+                class: 'prose prose-sm max-w-none focus:outline-none min-h-[500px] p-4',
+            },
+        },
+        onUpdate: ({ editor }) => {
+            const html = editor.getHTML();
+            const text = editor.getText({ blockSeparator: '\n' });
+            onChange?.(html, text);
+        },
+    });
 
     useEffect(() => {
-        setValue(initialContent);
-    }, [initialContent]);
+        if (editor && initialContent) {
+            // Convert plain text to HTML with proper line breaks
+            const htmlContent = initialContent
+                .split('\n')
+                .map(line => {
+                    if (line.trim().startsWith('## ')) {
+                        return `<h2>${line.replace('## ', '')}</h2>`;
+                    } else if (line.trim() === '---') {
+                        return '<hr>';
+                    } else if (line.trim() === '') {
+                        return '<p></p>';
+                    } else {
+                        return `<p>${line}</p>`;
+                    }
+                })
+                .join('');
 
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const text = e.target.value;
-        setValue(text);
-        onChange?.(text, text);
-    };
+            editor.commands.setContent(htmlContent);
+        }
+    }, [initialContent, editor]);
+
+    if (!editor) {
+        return null;
+    }
 
     return (
-        <textarea
-            className={cn(
-                "w-full h-full p-4 resize-none border-0 focus:outline-none focus:ring-0",
-                "font-sans text-base leading-relaxed",
-                className
-            )}
-            value={value}
-            onChange={handleChange}
-            placeholder="Почніть писати ваш план на день..."
-        />
+        <div className={cn("border-0 bg-background my-day-editor", className)}>
+            <EditorContent editor={editor} />
+        </div>
     );
 };
 
