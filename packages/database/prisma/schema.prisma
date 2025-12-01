@@ -269,6 +269,7 @@ model UserPreferences {
   workDayEnd            String   @default("18:00")
   isAutoBookFocus       Boolean  @default(false)
   privacyAggregatedOnly Boolean  @default(true)
+  useMinimalisticDesign Boolean  @default(false)
   updatedAt             DateTime @updatedAt
 }
 
