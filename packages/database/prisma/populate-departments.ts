@@ -87,22 +87,27 @@ async function populateDepartments() {
         let targetRoleArchId: string | undefined;
 
         // Logic to assign departments and roles
-        if (user.email.includes('john') || user.email.includes('mike')) {
+        if (user.email.includes('yaroslav')) {
+            targetDeptCode = 'OPS';
+            const ops = archetypes.find(a => a.code === 'OPS');
+            const ceoRole = ops?.roles.find(r => r.code === 'OPS_CEO');
+            if (ceoRole) targetRoleArchId = ceoRole.id;
+        }
+        else if (user.email.includes('john') || user.email.includes('mike')) {
             targetDeptCode = 'PRODENG';
             // Assign Backend Dev role
-            const role = findRoleArch('PRODENG', 'BACKEND') || findRoleArch('ENG', 'BACKEND');
-            // In seed it is ENG_BACKEND but dept is PRODENG.
-            const prodEng = archetypes.find(a => a.code === 'PRODENG');
-            const devRole = prodEng?.roles.find(r => r.code === 'ENG_BACKEND');
-            if (devRole) targetRoleArchId = devRole.id;
+            const role = findRoleArch('PRODENG', 'ENG_BACKEND');
+            if (role) targetRoleArchId = role.id;
         }
         else if (user.email.includes('sarah')) {
             targetDeptCode = 'MKT';
-            // No MKT roles in seed yet
+            const mkt = archetypes.find(a => a.code === 'MKT');
+            const mktRole = mkt?.roles.find(r => r.code === 'MKT_MANAGER'); // Or MKT_PERF
+            if (mktRole) targetRoleArchId = mktRole.id;
         }
         else if (user.email.includes('emma')) {
             targetDeptCode = 'PRODENG';
-            // Assign Frontend or similar if available
+            // Assign Frontend
             const prodEng = archetypes.find(a => a.code === 'PRODENG');
             const feRole = prodEng?.roles.find(r => r.code === 'ENG_FRONTEND');
             if (feRole) targetRoleArchId = feRole.id;
@@ -115,7 +120,7 @@ async function populateDepartments() {
             if (aeRole) targetRoleArchId = aeRole.id;
         }
         else if (user.email.includes('ceo')) {
-            targetDeptCode = 'SALES';
+            targetDeptCode = 'SALES'; // Or OPS if real CEO
         }
         else if (user.email.includes('manager')) {
             targetDeptCode = 'SALES';

@@ -609,6 +609,7 @@ model RoleArchetype {
   name                String   // "SDR / Лідогенератор"
   level               RoleLevel
   description         String?
+  reportTemplate      Json?    // Structure of the daily report for this role
   
   departmentArchetypeId String
   departmentArchetype   DepartmentArchetype @relation(fields: [departmentArchetypeId], references: [id])
