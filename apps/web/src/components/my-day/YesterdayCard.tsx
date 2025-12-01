@@ -1,5 +1,15 @@
 import React from 'react';
-import { Plus, Zap, CheckSquare, BarChart2, ChevronDown } from 'lucide-react';
+import { Plus, Zap, CheckSquare, BarChart2, ChevronDown, Trash2 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Task, TaskStatus } from './types';
 
 interface YesterdayCardProps {
@@ -10,7 +20,9 @@ interface YesterdayCardProps {
     metrics: string;
     onTaskStatusChange: (id: string, status: TaskStatus) => void;
     onTaskCommentChange: (id: string, comment: string) => void; // New handler
+    onTaskTitleChange: (id: string, title: string) => void; // New handler
     onAddTask: () => void; // New handler
+    onDeleteTask: (id: string) => void;
     onUnplannedChange: (val: string) => void;
     onSmallTasksChange: (val: string) => void;
     onSummaryChange: (val: string) => void;
@@ -19,9 +31,31 @@ interface YesterdayCardProps {
 
 export const YesterdayCard: React.FC<YesterdayCardProps> = ({
     tasks, unplannedWork, smallTasks, summary, metrics,
-    onTaskStatusChange, onTaskCommentChange, onAddTask,
+    onTaskStatusChange, onTaskCommentChange, onTaskTitleChange, onAddTask, onDeleteTask,
     onUnplannedChange, onSmallTasksChange, onSummaryChange, onMetricsChange
 }) => {
+    const [taskToDelete, setTaskToDelete] = React.useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        // Check if task is empty (no title and no comment)
+        const isEmpty = !task.title.trim() && (!task.comment || !task.comment.trim());
+
+        if (isEmpty) {
+            onDeleteTask(id);
+        } else {
+            setTaskToDelete(id);
+        }
+    };
+
+    const confirmDelete = () => {
+        if (taskToDelete) {
+            onDeleteTask(taskToDelete);
+            setTaskToDelete(null);
+        }
+    };
 
     const handleStatusCycle = (task: Task) => {
         const nextStatus: Record<TaskStatus, TaskStatus> = {
@@ -94,7 +128,13 @@ export const YesterdayCard: React.FC<YesterdayCardProps> = ({
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="font-medium text-slate-800 dark:text-slate-200">{task.title}</span>
+                                            <input
+                                                type="text"
+                                                value={task.title}
+                                                onChange={(e) => onTaskTitleChange(task.id, e.target.value)}
+                                                placeholder="Назва задачі..."
+                                                className="font-medium text-slate-800 dark:text-slate-200 bg-transparent border-none focus:ring-0 p-0 placeholder:text-slate-400 w-full sm:w-auto min-w-[200px]"
+                                            />
                                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase 
                         ${task.type === 'Big' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300'}`}>
                                                 {task.type}
@@ -116,6 +156,18 @@ export const YesterdayCard: React.FC<YesterdayCardProps> = ({
                                     >
                                         <span>{getStatusLabel(task.status)}</span>
                                         <ChevronDown className="w-3 h-3 opacity-60" />
+                                    </button>
+
+                                    {/* Delete Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteClick(task.id);
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all"
+                                        title="Видалити задачу"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
 
@@ -195,6 +247,23 @@ export const YesterdayCard: React.FC<YesterdayCardProps> = ({
                     />
                 </section>
             </div>
+
+            <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Видалити задачу?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ця дія незворотна. Задача буде видалена з вашого звіту.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Скасувати</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                            Видалити
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

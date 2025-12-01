@@ -1,5 +1,61 @@
 import { RoleLevel, KPIDirection, KPIFrequency } from '@prisma/client';
 
+// Report Template Types
+type FieldType = 'bigTask' | 'mediumTasks' | 'smallTasks' | 'kpi' | 'text' | 'number';
+
+interface ReportField {
+    id: string;
+    label: string;
+    type: FieldType;
+    placeholder?: string;
+    required?: boolean;
+}
+
+interface ReportSection {
+    id: string;
+    title: string;
+    fields: ReportField[];
+}
+
+interface ReportTemplate {
+    sections: ReportSection[];
+}
+
+// Helper function to create base template
+const createBaseTemplate = (): ReportTemplate => ({
+    sections: [
+        {
+            id: 'yesterday',
+            title: 'Що зробив учора',
+            fields: [
+                { id: 'yesterdayBig', label: 'Велика справа', type: 'bigTask', required: false },
+                { id: 'yesterdayMedium', label: 'Інші важливі справи', type: 'mediumTasks', required: false },
+                { id: 'yesterdaySmall', label: 'Дрібниця', type: 'smallTasks', placeholder: '- відповів на листи\n- заповнив звіт', required: false },
+                { id: 'yesterdayMetrics', label: 'Метрики (факт)', type: 'kpi', required: false }
+            ]
+        },
+        {
+            id: 'today',
+            title: 'План на сьогодні',
+            fields: [
+                { id: 'todayBig', label: 'Головний фокус', type: 'bigTask', required: true },
+                { id: 'todayMedium', label: 'Інші справи', type: 'mediumTasks', required: false },
+                { id: 'todaySmall', label: 'Рутина', type: 'smallTasks', placeholder: '- зустріч о 14:00\n- оплатити рахунки', required: false },
+                { id: 'todayMetrics', label: 'Метрики (план)', type: 'kpi', required: false }
+            ]
+        },
+        {
+            id: 'help',
+            title: 'Потрібна допомога',
+            fields: [
+                { id: 'blockers', label: 'Блокери / Питання', type: 'text', placeholder: 'Що заважає? Де потрібна допомога?', required: false }
+            ]
+        }
+    ]
+});
+
+
+
 export const DEPARTMENTS_DATA = [
     {
         code: 'SALES',
@@ -21,7 +77,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'LEAD_TO_MEETING_RATE', name: 'Конверсія ліда в зустріч', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'DATA_QUALITY_SCORE', name: 'Якість даних по лідах', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'FOLLOW_UPS_DONE', name: 'Зроблені фолоу-апи', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.DAILY },
-                ]
+                ],
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'SALES_AE',
@@ -39,6 +96,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'MULTI_THREADING_SCORE', name: 'Кількість контактів у компанії', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'UPSELL_CROSSSELL_VALUE', name: 'Додаткові продажі', unit: 'грн', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'SALES_KAM',
@@ -55,6 +114,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'RISK_ACCOUNTS_COUNT', name: 'Кількість ризикових акаунтів', unit: 'кількість', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'QBR_HELD', name: 'Проведені QBR', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'SALES_LEAD',
@@ -70,6 +131,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'TEAM_TURNOVER', name: 'Плинність кадрів', unit: '%', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'BEST_PRACTICE_SHARING', name: 'Внутрішні тренінги', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'SALES_VP',
@@ -85,6 +148,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'HEADCOUNT_PLAN_VS_FACT', name: 'План/факт по команді', unit: '%', direction: KPIDirection.TARGET_VALUE, frequency: KPIFrequency.MONTHLY },
                     { code: 'STRATEGIC_DEALS_PROGRESS', name: 'Стратегічні угоди', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             }
         ]
     },
@@ -105,6 +170,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'MKT_ROAS', name: 'ROAS', unit: 'x', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'MKT_CTR', name: 'CTR', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'MKT_CONTENT',
@@ -118,6 +185,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'MKT_ENGAGEMENT_RATE', name: 'Engagement Rate', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'MKT_SESSIONS', name: 'Сеанси (трафік)', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'MKT_EMAIL_CRM',
@@ -129,6 +198,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'MKT_EMAIL_CLICK_RATE', name: 'Click Rate', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'MKT_MQL', name: 'MQLs Generated', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'MKT_GROWTH_LEAD',
@@ -141,6 +212,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'MKT_UNIQUE_USERS', name: 'Унікальні користувачі', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'MKT_LP_CVR', name: 'Конверсія лендингів', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'MKT_CMO',
@@ -153,6 +226,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'MKT_BOUNCE_RATE', name: 'Bounce Rate', unit: '%', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'MKT_AVG_SESSION_DURATION', name: 'Avg Session Duration', unit: 'сек', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             }
         ]
     },
@@ -173,6 +248,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'PRODUCT_TIME_TO_VALUE', name: 'Time to Value', unit: 'дні', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'DELIVERY_STORIES_COMPLETED', name: 'Stories Completed', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'ENG_DEV',
@@ -184,6 +261,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'QUALITY_DEFECTS_FOUND', name: 'Defects Found', unit: 'кількість', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'QUALITY_AUTOTEST_COVERAGE', name: 'Test Coverage', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'ENG_QA',
@@ -195,6 +274,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'QUALITY_BUG_REOPEN_RATE', name: 'Bug Reopen Rate', unit: '%', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'QUALITY_DEFECTS_FOUND_QA', name: 'Bugs Found', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'ENG_DEVOPS',
@@ -207,6 +288,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'RELIABILITY_MTTR', name: 'MTTR', unit: 'години', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'DEPLOY_FREQUENCY', name: 'Deploy Frequency', unit: 'кількість', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'ENG_CTO',
@@ -218,6 +301,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'DELIVERY_CYCLE_TIME', name: 'Cycle Time', unit: 'дні', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'RELIABILITY_UPTIME_CTO', name: 'System Uptime', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             }
         ]
     },
@@ -239,6 +324,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'CS_EXPANSION_REVENUE', name: 'Expansion Revenue', unit: 'грн', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'CS_HEALTH_SCORE', name: 'Health Score', unit: 'бал', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'CS_SUPPORT_AGENT',
@@ -252,6 +339,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'SUPPORT_CSAT', name: 'CSAT', unit: 'бал', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                     { code: 'SUPPORT_SLA_MET', name: 'SLA Met', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.WEEKLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'CS_HEAD',
@@ -262,6 +351,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'CS_NET_RETENTION_HEAD', name: 'Net Retention', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'SUPPORT_CSAT_HEAD', name: 'Global CSAT', unit: 'бал', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             }
         ]
     },
@@ -282,6 +373,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'OPS_BUDGET_ADHERENCE', name: 'Budget Adherence', unit: '%', direction: KPIDirection.TARGET_VALUE, frequency: KPIFrequency.MONTHLY },
                     { code: 'OPS_MARGIN_PER_PROJECT', name: 'Project Margin', unit: '%', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'OPS_MANAGER',
@@ -294,6 +387,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'OPS_DEFECT_RATE', name: 'Defect Rate', unit: '%', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'OPS_CUSTOMER_COMPLAINTS', name: 'Complaints', unit: 'кількість', direction: KPIDirection.LOWER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             },
             {
                 code: 'OPS_CEO',
@@ -305,6 +400,8 @@ export const DEPARTMENTS_DATA = [
                     { code: 'CEO_EBITDA', name: 'EBITDA', unit: 'грн', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                     { code: 'CEO_RUNWAY', name: 'Runway', unit: 'місяці', direction: KPIDirection.HIGHER_BETTER, frequency: KPIFrequency.MONTHLY },
                 ]
+                ,
+                reportTemplate: createBaseTemplate()
             }
         ]
     }

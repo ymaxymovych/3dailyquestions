@@ -209,6 +209,19 @@ export default function ThreeBlocksPage() {
         updateState(newState);
     };
 
+    const handleTaskTitleChange = (id: string, title: string) => {
+        const newState = {
+            ...reportState,
+            yesterday: {
+                ...reportState.yesterday,
+                plannedTasks: reportState.yesterday.plannedTasks.map(t =>
+                    t.id === id ? { ...t, title } : t
+                )
+            }
+        };
+        updateState(newState);
+    };
+
     const updateYesterdayField = (field: 'unplannedWork' | 'summary' | 'smallTasks' | 'metrics', value: string) => {
         const newState = {
             ...reportState,
@@ -234,6 +247,18 @@ export default function ThreeBlocksPage() {
             }
         };
         updateState(newState);
+    };
+
+    const handleDeleteTask = (id: string) => {
+        const newState = {
+            ...reportState,
+            yesterday: {
+                ...reportState.yesterday,
+                plannedTasks: reportState.yesterday.plannedTasks.filter(t => t.id !== id)
+            }
+        };
+        updateState(newState);
+        toast.success('Задачу видалено');
     };
 
     // Handlers for TodayCard
@@ -385,11 +410,13 @@ export default function ThreeBlocksPage() {
                                             metrics={reportState.yesterday.metrics}
                                             onTaskStatusChange={handleTaskStatusChange}
                                             onTaskCommentChange={handleTaskCommentChange}
+                                            onTaskTitleChange={handleTaskTitleChange}
                                             onAddTask={handleAddTask}
                                             onUnplannedChange={(v) => updateYesterdayField('unplannedWork', v)}
                                             onSmallTasksChange={(v) => updateYesterdayField('smallTasks', v)}
                                             onSummaryChange={(v) => updateYesterdayField('summary', v)}
                                             onMetricsChange={(v) => updateYesterdayField('metrics', v)}
+                                            onDeleteTask={handleDeleteTask}
                                         />
 
                                         <TodayCard

@@ -34,7 +34,8 @@ async function seedArchetypes() {
                     name: roleData.name,
                     level: roleData.level,
                     description: roleData.description,
-                    departmentArchetypeId: dept.id
+                    departmentArchetypeId: dept.id,
+                    reportTemplate: roleData.reportTemplate as any
                 },
                 create: {
                     code: roleData.code,
@@ -42,6 +43,7 @@ async function seedArchetypes() {
                     level: roleData.level,
                     description: roleData.description,
                     departmentArchetypeId: dept.id,
+                    reportTemplate: roleData.reportTemplate as any
                 },
             });
 
