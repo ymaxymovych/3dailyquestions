@@ -331,56 +331,169 @@ export class DailyReportsService {
       },
     };
 
+    const threeBlocksWhereClause: any = {
+      user: {
+        deptId: user.deptId,
+        orgId: organizationId, // Ensure user belongs to org
+      },
+      status: 'PUBLISHED', // Only show published reports
+    };
+
     if (date) {
-      whereClause.date = new Date(date);
+      const targetDate = new Date(date);
+      whereClause.date = targetDate;
+      threeBlocksWhereClause.date = targetDate;
     }
 
-    return this.prisma.dailyReport.findMany({
-      where: whereClause,
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            roleArchetype: {
-              select: {
-                name: true,
-                code: true,
+    // Fetch both DailyReports and ThreeBlocks in parallel
+    const [dailyReports, threeBlocks] = await Promise.all([
+      this.prisma.dailyReport.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              roleArchetype: {
+                select: {
+                  name: true,
+                  code: true,
+                },
+              },
+            },
+          },
+          helpRequests: true,
+          kpis: true,
+          reactions: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
+              },
+            },
+          },
+          comments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.threeBlocks.findMany({
+        where: threeBlocksWhereClause,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              roleArchetype: {
+                select: {
+                  name: true,
+                  code: true,
+                },
               },
             },
           },
         },
-        helpRequests: true,
-        kpis: true,
-        reactions: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-          },
+        orderBy: {
+          createdAt: 'desc',
         },
-        comments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      }),
+    ]);
+
+    // Map ThreeBlocks to DailyReport structure
+    const mappedThreeBlocks = threeBlocks.map(block => {
+      let todayPlan: any = {};
+      let helpNeeded: any = {};
+      let yesterdayTasks: any = {};
+
+      try {
+        todayPlan = block.todayPlan ? JSON.parse(block.todayPlan) : {};
+        helpNeeded = block.helpNeeded ? JSON.parse(block.helpNeeded) : {};
+        yesterdayTasks = block.yesterdayTasks ? JSON.parse(block.yesterdayTasks) : {};
+      } catch (e) {
+        console.error('Error parsing ThreeBlocks JSON', e);
+      }
+
+      // Extract tasks
+      const bigTask = todayPlan.bigTask ? { text: todayPlan.bigTask } : null;
+
+      // Medium tasks are stored as a single string with newlines in the new UI
+      const mediumTasks = todayPlan.mediumTasks
+        ? todayPlan.mediumTasks.split('\n').filter((t: string) => t.trim()).map((t: string) => ({ text: t }))
+        : [];
+
+      const smallTasks = todayPlan.smallTasks
+        ? todayPlan.smallTasks.split('\n').filter((t: string) => t.trim()).map((t: string) => ({ text: t }))
+        : [];
+
+      // Blockers
+      const helpRequests = helpNeeded.blockers
+        ? helpNeeded.blockers.split('\n').filter((t: string) => t.trim()).map((t: string, index: number) => ({
+          id: `virtual-hr-${block.id}-${index}`,
+          text: t,
+          priority: 'HIGH',
+          status: 'OPEN',
+        }))
+        : [];
+
+      // Calculate load status
+      const loadStatus = this.calculateLoadStatus(bigTask, mediumTasks, smallTasks);
+
+      return {
+        id: block.id,
+        userId: block.userId,
+        date: block.date,
+        todayBig: bigTask,
+        todayMedium: mediumTasks,
+        todaySmall: smallTasks,
+        yesterdayBig: null, // TODO: Extract from yesterdayTasks if needed
+        loadStatus,
+        loadManuallySet: false,
+        visibility: 'TEAM',
+        user: block.user,
+        helpRequests,
+        kpis: [], // TODO: Extract metrics if needed
+        reactions: [],
+        comments: [],
+        createdAt: block.createdAt,
+        updatedAt: block.updatedAt,
+      };
     });
+
+    // Merge lists, preferring ThreeBlocks if both exist for same user/date
+    // Actually, if a user has both, we should probably show the most recently updated one, 
+    // OR just prefer ThreeBlocks as it's the "v2".
+    // Let's use a Map to deduplicate by userId
+
+    const reportMap = new Map<string, any>();
+
+    // Add DailyReports first
+    dailyReports.forEach(report => {
+      reportMap.set(report.userId, report);
+    });
+
+    // Add/Overwrite with ThreeBlocks
+    mappedThreeBlocks.forEach(report => {
+      reportMap.set(report.userId, report);
+    });
+
+    return Array.from(reportMap.values());
   }
 
   async addReaction(userId: string, reportId: string, emoji: string) {

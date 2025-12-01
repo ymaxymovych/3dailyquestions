@@ -1,0 +1,5 @@
+{
+  "name": "Daily Sync - Employee Check-in",
+  "description": "A productivity dashboard for daily standups. Allows users to report yesterday's progress, plan today's focus, and flag blockers with AI-assisted pre-filling and context from external integrations.",
+  "requestFramePermissions": []
+}

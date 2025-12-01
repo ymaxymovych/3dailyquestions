@@ -85,6 +85,14 @@ const settingsCategories: SettingsCategory[] = [
         items: [
             { id: "integrations", label: "Yaware & Others", icon: Plug, component: IntegrationsTab, adminOnly: true },
         ]
+    },
+    {
+        id: "system",
+        label: "System",
+        icon: Shield,
+        items: [
+            { id: "system", label: "System Settings", icon: Shield, component: () => null }, // Placeholder, will navigate to /settings/system
+        ]
     }
 ];
 

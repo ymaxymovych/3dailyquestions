@@ -76,4 +76,20 @@ export class EmailService {
 
         // TODO: Replace with real email sending
     }
+    /**
+     * Notify manager about help needed
+     * @param managerEmail - Manager email
+     * @param userName - Employee name
+     * @param helpText - Text of the help request
+     * @param reportLink - Link to the report
+     */
+    async sendManagerHelpNotification(managerEmail: string, userName: string, helpText: string, reportLink: string) {
+        console.log('📧 [EMAIL STUB] Sending help needed notification:');
+        console.log(`   To: ${managerEmail}`);
+        console.log(`   Subject: 🚨 Help Needed: ${userName}`);
+        console.log(`   Body: ${userName} reported a blocker/help request:`);
+        console.log(`   "${helpText}"`);
+        console.log(`   Link: ${reportLink}`);
+        console.log('   [This is a stub. Real email will be sent in Phase 11]');
+    }
 }

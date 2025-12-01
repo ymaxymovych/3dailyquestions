@@ -18,8 +18,8 @@ export default function BlockHelp({ help, onHelpChange }: BlockHelpProps) {
         )}>
             <div>
                 <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className={cn("h-6 w-6", hasContent ? "text-amber-600" : "text-amber-500")} />
-                    <h2 className="text-xl font-bold text-foreground">БЛОК 3: Яка допомога мені потрібна</h2>
+                    {help && <AlertTriangle className={cn("h-6 w-6", hasContent ? "text-amber-600" : "text-amber-500")} />}
+                    <h2 className="text-xl font-bold text-foreground">Яка допомога мені потрібна</h2>
                 </div>
 
                 <div>

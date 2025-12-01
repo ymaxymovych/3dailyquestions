@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Refresh user data immediately
         api.get('/users/me').then(({ data }) => {
             setUser(data);
-            router.push('/dashboard');
+            router.push('/daily-report/team');
         });
     }, [router]);
 
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else if (user && !user.orgId && pathname !== '/onboarding') {
                 router.push('/onboarding');
             } else if (user && user.orgId && pathname === '/onboarding') {
-                router.push('/dashboard'); // Already onboarded
+                router.push('/daily-report/team'); // Already onboarded
             }
         }
     }, [user, isLoading, pathname, router]);

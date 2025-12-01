@@ -1,4 +1,3 @@
-```typescript
 import {
     Controller,
     Get,
@@ -13,7 +12,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ThreeBlocksService } from './three-blocks.service';
 
-@Controller('3-blocks')
+@Controller('my-day')
 @UseGuards(JwtAuthGuard)
 export class ThreeBlocksController {
     constructor(private readonly threeBlocksService: ThreeBlocksService) { }
@@ -59,4 +58,3 @@ export class ThreeBlocksController {
         return this.threeBlocksService.publishThreeBlocks(req.user.userId, date);
     }
 }
-```

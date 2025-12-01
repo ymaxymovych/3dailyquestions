@@ -25,4 +25,8 @@ export class UpdatePreferencesDto {
     @IsBoolean()
     @IsOptional()
     privacyAggregatedOnly?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
+    useMinimalisticDesign?: boolean;
 }
