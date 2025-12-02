@@ -18,6 +18,7 @@ import { YesterdayCard } from '@/components/my-day/YesterdayCard';
 import { TodayCard } from '@/components/my-day/TodayCard';
 import { HelpCard } from '@/components/my-day/HelpCard';
 import { ContextPanel } from '@/components/my-day/ContextPanel';
+import { AIMentorCard } from '@/components/my-day/AIMentorCard';
 import { DailyReportState, Task, TaskStatus } from '@/components/my-day/types';
 import { INITIAL_STATE } from '@/components/my-day/constants';
 
@@ -452,6 +453,7 @@ export default function ThreeBlocksPage() {
                                         </div>
                                     </>
                                 )}
+
                             </div>
 
                             {/* Right Column: Context Panel (33%) */}
@@ -467,6 +469,11 @@ export default function ThreeBlocksPage() {
                                         </button>
                                     </div>
                                 )}
+
+                                {/* AI Mentor Card - Desktop only */}
+                                <div className="hidden lg:block mb-6">
+                                    <AIMentorCard userId={''} date={date} />
+                                </div>
 
                                 <ContextPanel
                                     isMobile={showMobileContext}

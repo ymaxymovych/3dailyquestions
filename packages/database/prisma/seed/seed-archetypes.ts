@@ -35,7 +35,10 @@ async function seedArchetypes() {
                     level: roleData.level,
                     description: roleData.description,
                     departmentArchetypeId: dept.id,
-                    reportTemplate: roleData.reportTemplate as any
+                    reportTemplate: roleData.reportTemplate as any,
+                    mission: (roleData as any).mission,
+                    typicalTasks: (roleData as any).typicalTasks,
+                    antiPatterns: (roleData as any).antiPatterns
                 },
                 create: {
                     code: roleData.code,
@@ -43,7 +46,10 @@ async function seedArchetypes() {
                     level: roleData.level,
                     description: roleData.description,
                     departmentArchetypeId: dept.id,
-                    reportTemplate: roleData.reportTemplate as any
+                    reportTemplate: roleData.reportTemplate as any,
+                    mission: (roleData as any).mission,
+                    typicalTasks: (roleData as any).typicalTasks,
+                    antiPatterns: (roleData as any).antiPatterns
                 },
             });
 
@@ -61,7 +67,6 @@ async function seedArchetypes() {
                     create: {
                         code: kpiData.code,
                         name: kpiData.name,
-                        description: kpiData.description || undefined, // Handle optional description if added to data.ts later
                         unit: kpiData.unit,
                         direction: kpiData.direction,
                         frequency: kpiData.frequency,

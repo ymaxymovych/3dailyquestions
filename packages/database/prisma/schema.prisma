@@ -28,6 +28,16 @@ model Organization {
   dailyReports   DailyReport[]
   domains        String[]        @default([]) // e.g. ["softserve.com", "google.com"]
   invites        Invite[]
+  
+  // AI Advisory Board Settings
+  settings       Json?           // Global work days/hours, defaults
+  aiPolicy       Json?           // AI behavior settings (tone, frequency)
+  
+  // New Relations
+  teams          Team[]
+  jobRoles       JobRole[]
+  goals          Goal[]
+  setup          OrganizationSetup?
 }
 
 model Invite {
@@ -76,6 +86,8 @@ model Department {
   
   users     User[]
   projects  Project[]
+  teams     Team[]
+  goals     Goal[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -148,6 +160,25 @@ model User {
   artifacts       Artifact[]
   userProjects    UserProject[]
   sentInvites     Invite[]      @relation("UserInvites")
+
+  // AI Advisory Board Fields
+  managerId       String?
+  manager         User?         @relation("UserManager", fields: [managerId], references: [id])
+  directReports   User[]        @relation("UserManager")
+
+  teamId          String?
+  team            Team?         @relation(fields: [teamId], references: [id])
+
+  jobRoleId       String?
+  jobRole         JobRole?      @relation(fields: [jobRoleId], references: [id])
+
+  workSchedule    Json?         // { days: [1,2,3,4,5], start: "09:00", end: "18:00", timezone: "UTC" }
+
+  // New Relations
+  workdays        Workday[]
+  goals           Goal[]        @relation("UserGoals")
+  aiAdvice        AIAdvice[]
+  workdaySummaries WorkdaySummary[]
 }
 
 // --- Access Control (RBAC) ---
@@ -611,11 +642,17 @@ model RoleArchetype {
   description         String?
   reportTemplate      Json?    // Structure of the daily report for this role
   
+  // AI Context
+  mission             String?  @db.Text
+  typicalTasks        Json?    // ["Task 1", "Task 2"]
+  antiPatterns        Json?    // ["Don't do X", "Don't do Y"]
+  
   departmentArchetypeId String
   departmentArchetype   DepartmentArchetype @relation(fields: [departmentArchetypeId], references: [id])
   
   kpis                KPITemplate[]
   users               User[] @relation("UserRoleArchetype")
+  jobRoles            JobRole[]
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -735,4 +772,270 @@ model ThreeBlocks {
 enum ThreeBlocksStatus {
   DRAFT
   PUBLISHED
+}
+
+// --- AI Advisory Board System ---
+
+// 1. Structure & Roles
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  deptId      String
+  department  Department @relation(fields: [deptId], references: [id])
+  
+  managerId   String?
+  // Manager relation is handled via User.teamId + User.roles or explicit logic
+  // But for clarity we can link to a user who is the lead
+  
+  users       User[]
+  goals       Goal[]   @relation("TeamGoals")
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("teams")
+}
+
+model JobRole {
+  id          String   @id @default(uuid())
+  name        String   // "Sales Manager SMB"
+  level       RoleLevel // JUNIOR, MIDDLE, SENIOR, LEAD
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Link to global archetype
+  archetypeId String?
+  archetype   RoleArchetype? @relation(fields: [archetypeId], references: [id])
+  
+  // Custom context for this specific company role
+  mission     String?  @db.Text
+  responsibilities Json? // ["Call leads", "Close deals"]
+  
+  users       User[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("job_roles")
+}
+
+// 2. Goals & Metrics
+
+enum GoalLevel {
+  COMPANY
+  DEPARTMENT
+  TEAM
+  USER
+}
+
+model Goal {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  level       GoalLevel
+  period      String   // "2024-Q1", "2024-YEAR"
+  
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Optional links based on level
+  deptId      String?
+  department  Department? @relation(fields: [deptId], references: [id])
+  
+  teamId      String?
+  team        Team?    @relation("TeamGoals", fields: [teamId], references: [id])
+  
+  userId      String?
+  user        User?    @relation("UserGoals", fields: [userId], references: [id])
+  
+  parentId    String?
+  parent      Goal?    @relation("GoalHierarchy", fields: [parentId], references: [id])
+  children    Goal[]   @relation("GoalHierarchy")
+  
+  metrics     Json?    // [{ name: "Revenue", target: 100000, current: 50000 }]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("goals")
+}
+
+// 3. Workday & Tasks (The Core)
+
+model Workday {
+  id              String   @id @default(uuid())
+  date            DateTime @db.Date
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Plan Phase
+  mainFocus       String?  @db.Text // "Головний результат дня"
+  selfAssessment  Int?     // 1-10 scale of resource/confidence
+  
+  // Report Phase
+  reportText      String?  @db.Text // "Що вдалося зробити"
+  blockersText    String?  @db.Text // "Що завадило"
+  mood            Int?     // 1-5
+  
+  // Stats & Signals (Aggregated)
+  dailyStats      Json?    // { planned: 5, completed: 3, focusMinutes: 120 }
+  
+  tasks           DayTask[]
+  aiAdvice        AIAdvice[]
+  integrationSummaries IntegrationSummary[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, date])
+  @@map("workdays")
+}
+
+enum DayTaskStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+  CARRYOVER
+  CANCELED
+}
+
+enum TaskSource {
+  PLAN
+  REPORT
+}
+
+model DayTask {
+  id          String   @id @default(uuid())
+  workdayId   String
+  workday     Workday  @relation(fields: [workdayId], references: [id], onDelete: Cascade)
+  
+  rawText     String   @db.Text // Original input
+  source      TaskSource @default(PLAN)
+  
+  // Structured Data (AI Enriched)
+  title       String?
+  outcome     String?  @db.Text
+  steps       Json?    // ["Step 1", "Step 2"]
+  dod         String?  // Definition of Done
+  tags        Json?    // ["Sales", "Urgent"]
+  priority    String?  // "A", "B", "C"
+  
+  status      DayTaskStatus @default(PLANNED)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("day_tasks")
+}
+
+// 4. AI & Analytics
+
+enum AdviceType {
+  EMPLOYEE_MENTOR
+  MANAGER_DIGEST
+  TASK_STRUCTURIZER
+}
+
+model AIAdvice {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  workdayId   String?
+  workday     Workday? @relation(fields: [workdayId], references: [id])
+  
+  type        AdviceType
+  content     Json     // The structured advice payload
+  
+  feedback    Int?     // User rating (1-5)
+  feedbackText String?
+  
+  model       String?  // "gpt-4o"
+  tokensIn    Int?
+  tokensOut   Int?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("ai_advice")
+}
+
+model ManagerDigest {
+  id          String   @id @default(uuid())
+  managerId   String
+  // No direct relation to User to avoid circular dependency hell, just store ID
+  // Or optional relation if needed
+  
+  date        DateTime @db.Date
+  content     Json     // { teamOverview: "...", risks: [], focus: [] }
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([managerId, date])
+  @@map("manager_digests")
+}
+
+model WorkdaySummary {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  
+  summary     String   @db.Text // Human-readable summary of the day
+  signals     Json?    // { completedPct: 80, mood: 4, mainBlocker: "API" }
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([userId, date])
+  @@map("workday_summaries")
+}
+
+model IntegrationSummary {
+  id          String   @id @default(uuid())
+  workdayId   String
+  workday     Workday  @relation(fields: [workdayId], references: [id], onDelete: Cascade)
+  
+  source      String   // "yaware", "calendar"
+  data        Json     // { activeMinutes: 300, meetings: 4 }
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("integration_summaries")
+}
+
+// 5. Setup & Onboarding Tracking
+
+model OrganizationSetup {
+  id          String   @id @default(uuid())
+  orgId       String   @unique
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  // Step completion tracking
+  companyConfigured     Boolean @default(false)
+  structureConfigured   Boolean @default(false)   // Departments & Teams
+  rolesConfigured       Boolean @default(false)   // JobRoles created
+  employeesConfigured   Boolean @default(false)   // >= 2 employees
+  processConfigured     Boolean @default(false)   // Daily process settings
+  goalsConfigured       Boolean @default(false)   // At least 1 goal
+  
+  // Wizard state
+  wizardCompleted       Boolean @default(false)
+  wizardSkipped         Boolean @default(false)
+  currentStep           Int     @default(1)       // 1-7
+  
+  // Feature flags (derived from completion)
+  aiMentorEnabled       Boolean @default(false)
+  managerDigestEnabled  Boolean @default(false)
+  taskStructurizerEnabled Boolean @default(true)  // Always available
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("organization_setup")
 }

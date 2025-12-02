@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import AppLayout from '@/components/layout/AppLayout';
 import { TeamDashboard } from '@/components/dashboard/grid/TeamDashboard';
+import { ManagerDigestPanel } from '@/components/dashboard/ManagerDigestPanel';
 
 interface TeamReport {
     id: string;
@@ -324,6 +325,9 @@ export default function TeamDashboardPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Manager Digest Panel */}
+                <ManagerDigestPanel date={new Date(selectedDate)} />
 
                 {viewMode === 'grid' ? (
                     <TeamDashboard />

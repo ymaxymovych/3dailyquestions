@@ -17,6 +17,7 @@ import { getTeamReports, getTeamSummary, type TeamMemberReport, type TeamSummary
 import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
 import { EmployeeReportCard } from '@/components/dashboard/EmployeeReportCard';
 import { ReportDetailsModal } from '@/components/dashboard/ReportDetailsModal';
+import { ManagerDigestPanel } from '@/components/dashboard/ManagerDigestPanel';
 
 export default function ManagerDashboardPage() {
     const { user } = useAuth();
@@ -165,6 +166,9 @@ export default function ManagerDashboardPage() {
 
                 {/* Summary Stats */}
                 {summary && <DashboardSummary summary={summary} onFilterClick={handleSummaryClick} />}
+
+                {/* Manager Digest - AI-powered team insights */}
+                <ManagerDigestPanel date={date} />
 
                 {/* Filters */}
                 <Card>

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Target, ListTodo, MoreHorizontal, BarChart3, HelpCircle, CalendarPlus, CalendarCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Target, ListTodo, MoreHorizontal, BarChart3, HelpCircle, CalendarPlus, CalendarCheck, Sparkles, Loader2 } from 'lucide-react';
 
 interface TodayCardProps {
     bigTask: string;
@@ -14,6 +14,8 @@ interface TodayCardProps {
 export const TodayCard: React.FC<TodayCardProps> = ({
     bigTask, bigTaskTime, isBigTaskBooked, mediumTasks, smallTasks, expectedMetrics, onChange
 }) => {
+
+    const [isStructuring, setIsStructuring] = useState(false);
 
     const handleDrop = (e: React.DragEvent, field: string, currentValue: string) => {
         e.preventDefault();
@@ -34,6 +36,46 @@ export const TodayCard: React.FC<TodayCardProps> = ({
 
     const toggleBooking = () => {
         onChange('isBigTaskBooked', !isBigTaskBooked);
+    };
+
+    const handleStructurize = async () => {
+        if (!mediumTasks.trim()) return;
+
+        setIsStructuring(true);
+        try {
+            const response = await fetch('/api/ai/structure-task', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rawText: mediumTasks }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const structured = data.structured;
+
+                // Format structured output
+                let formattedText = `${structured.title}\n`;
+                if (structured.steps && structured.steps.length > 0) {
+                    formattedText += '\nКроки:\n';
+                    structured.steps.forEach((step: string, idx: number) => {
+                        formattedText += `${idx + 1}. ${step}\n`;
+                    });
+                }
+                if (structured.dod && structured.dod.length > 0) {
+                    formattedText += '\nDoD:\n';
+                    structured.dod.forEach((item: string) => {
+                        formattedText += `✓ ${item}\n`;
+                    });
+                }
+                formattedText += `\nПріоритет: ${structured.priority}`;
+
+                onChange('mediumTasks', formattedText);
+            }
+        } catch (error) {
+            console.error('Failed to structurize task:', error);
+        } finally {
+            setIsStructuring(false);
+        }
     };
 
     return (
@@ -104,9 +146,31 @@ export const TodayCard: React.FC<TodayCardProps> = ({
 
                 {/* Section B: Medium Tasks */}
                 <section>
-                    <div className="flex items-center gap-2 mb-2">
-                        <ListTodo className="w-4 h-4 text-blue-500" />
-                        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">3–5 середніх справ</h3>
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <ListTodo className="w-4 h-4 text-blue-500" />
+                            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">3–5 середніх справ</h3>
+                        </div>
+                        {mediumTasks.trim() && (
+                            <button
+                                onClick={handleStructurize}
+                                disabled={isStructuring}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-md transition-colors disabled:opacity-50"
+                                title="AI Structurize - парсить текст в structured task"
+                            >
+                                {isStructuring ? (
+                                    <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>Structuring...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                        <span>AI Structurize</span>
+                                    </>
+                                )}
+                            </button>
+                        )}
                     </div>
                     <textarea
                         value={mediumTasks}

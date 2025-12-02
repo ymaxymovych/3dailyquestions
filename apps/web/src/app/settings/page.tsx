@@ -14,7 +14,9 @@ import {
     Tags,
     Target,
     Plug,
-    ChevronRight
+    Brain,
+    ChevronRight,
+    Sparkles
 } from "lucide-react";
 
 // Import tabs
@@ -76,6 +78,20 @@ const settingsCategories: SettingsCategory[] = [
             { id: "projects", label: "Projects", icon: FolderKanban, component: ProjectsTab },
             { id: "tags", label: "Tags", icon: Tags, component: TagsTab },
             { id: "kpi", label: "KPIs", icon: Target, component: KPITab },
+        ]
+    },
+    {
+        id: "ai-advisory",
+        label: "AI Advisory Board",
+        icon: Briefcase,
+        adminOnly: true,
+        items: [
+            { id: "ai-dashboard", label: "AI Features Dashboard", icon: Brain, component: () => null, adminOnly: true },
+            { id: "ai-config", label: "AI Provider Config", icon: Brain, component: () => null, adminOnly: true },
+            { id: "company", label: "Company Settings", icon: Building2, component: () => null, adminOnly: true },
+            { id: "organization", label: "Organization Structure", icon: Building2, component: () => null, adminOnly: true },
+            { id: "roles", label: "Job Roles", icon: Briefcase, component: () => null, adminOnly: true },
+            { id: "archetypes", label: "Role Archetypes", icon: Briefcase, component: () => null, adminOnly: true },
         ]
     },
     {
@@ -180,7 +196,24 @@ export default function SettingsPage() {
                                             return (
                                                 <button
                                                     key={item.id}
-                                                    onClick={() => setSelectedItem(item.id)}
+                                                    onClick={() => {
+                                                        // Special handling for dedicated pages
+                                                        if (item.id === 'archetypes') {
+                                                            window.location.href = '/settings/archetypes';
+                                                        } else if (item.id === 'company') {
+                                                            window.location.href = '/settings/company';
+                                                        } else if (item.id === 'organization') {
+                                                            window.location.href = '/settings/organization';
+                                                        } else if (item.id === 'roles') {
+                                                            window.location.href = '/settings/roles';
+                                                        } else if (item.id === 'ai-dashboard') {
+                                                            window.location.href = '/settings/ai-advisory';
+                                                        } else if (item.id === 'ai-config') {
+                                                            window.location.href = '/settings/ai-config';
+                                                        } else {
+                                                            setSelectedItem(item.id);
+                                                        }
+                                                    }}
                                                     className={cn(
                                                         "w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors",
                                                         isSelected
@@ -199,6 +232,16 @@ export default function SettingsPage() {
                         );
                     })}
                 </nav>
+
+                <div className="p-4 border-t mt-auto">
+                    <button
+                        onClick={() => window.location.href = '/setup-wizard'}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-colors text-slate-600"
+                    >
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        <span>Launch Setup Wizard</span>
+                    </button>
+                </div>
             </aside>
 
             {/* Main Content */}
@@ -219,6 +262,6 @@ export default function SettingsPage() {
                     <CurrentComponent />
                 </div>
             </main>
-        </div>
+        </div >
     );
 }
