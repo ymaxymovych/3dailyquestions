@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ import { EmployeeReportCard } from '@/components/dashboard/EmployeeReportCard';
 import { ReportDetailsModal } from '@/components/dashboard/ReportDetailsModal';
 import { ManagerDigestPanel } from '@/components/dashboard/ManagerDigestPanel';
 
-export default function ManagerDashboardPage() {
+function ManagerDashboardContent() {
     const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -243,5 +243,17 @@ export default function ManagerDashboardPage() {
                 )}
             </div>
         </AppLayout>
+    );
+}
+
+export default function ManagerDashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        }>
+            <ManagerDashboardContent />
+        </Suspense>
     );
 }

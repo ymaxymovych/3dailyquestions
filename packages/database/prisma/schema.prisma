@@ -174,6 +174,11 @@ model User {
 
   workSchedule    Json?         // { days: [1,2,3,4,5], start: "09:00", end: "18:00", timezone: "UTC" }
 
+  // Wizard State
+  userWizardCompleted   Boolean @default(false)
+  userWizardSkipped     Boolean @default(false)
+  userCurrentStep       Int     @default(0)       // 0-4
+
   // New Relations
   workdays        Workday[]
   goals           Goal[]        @relation("UserGoals")
@@ -1025,9 +1030,9 @@ model OrganizationSetup {
   goalsConfigured       Boolean @default(false)   // At least 1 goal
   
   // Wizard state
-  wizardCompleted       Boolean @default(false)
-  wizardSkipped         Boolean @default(false)
-  currentStep           Int     @default(1)       // 1-7
+  orgWizardCompleted    Boolean @default(false)
+  orgWizardSkipped      Boolean @default(false)
+  orgCurrentStep        Int     @default(1)       // 1-5
   
   // Feature flags (derived from completion)
   aiMentorEnabled       Boolean @default(false)

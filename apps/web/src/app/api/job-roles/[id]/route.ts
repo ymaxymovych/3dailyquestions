@@ -5,9 +5,10 @@ import { prisma } from '@repo/database';
 // PATCH /api/job-roles/[id] - Update a job role
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // MOCK AUTH: Get first user for dev environment
         const mockUser = await prisma.user.findFirst();
         if (!mockUser || !mockUser.orgId) {
@@ -19,7 +20,7 @@ export async function PATCH(
         const { name, level, mission, responsibilities } = body;
 
         const jobRole = await prisma.jobRole.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 ...(name && { name }),
                 ...(level && { level }),
@@ -61,9 +62,10 @@ export async function PATCH(
 // DELETE /api/job-roles/[id] - Delete a job role
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // MOCK AUTH: Get first user for dev environment
         const mockUser = await prisma.user.findFirst();
         if (!mockUser || !mockUser.orgId) {
@@ -72,7 +74,7 @@ export async function DELETE(
         const orgId = mockUser.orgId;
 
         await prisma.jobRole.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ success: true });

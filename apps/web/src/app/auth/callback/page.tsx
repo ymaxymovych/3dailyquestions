@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { login } = useAuth();
@@ -32,5 +32,24 @@ export default function AuthCallbackPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function AuthCallbackPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+                <Card className="w-full max-w-md">
+                    <CardHeader>
+                        <CardTitle className="text-center">Authenticating...</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                    </CardContent>
+                </Card>
+            </div>
+        }>
+            <AuthCallbackContent />
+        </Suspense>
     );
 }

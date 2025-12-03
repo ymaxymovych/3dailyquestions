@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -41,7 +41,7 @@ interface User {
     };
 }
 
-export default function TeamPage() {
+function TeamPageContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
 
@@ -412,5 +412,17 @@ export default function TeamPage() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+export default function TeamPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        }>
+            <TeamPageContent />
+        </Suspense>
     );
 }

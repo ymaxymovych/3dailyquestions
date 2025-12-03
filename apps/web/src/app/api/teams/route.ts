@@ -21,13 +21,13 @@ export async function GET(request: NextRequest) {
                         name: true,
                     },
                 },
-                manager: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                    },
-                },
+                // manager: { // Commented out - relation not present in this schema version
+                //     select: {
+                //         id: true,
+                //         fullName: true,
+                //         email: true,
+                //     },
+                // },
                 _count: {
                     select: {
                         users: true,
@@ -82,13 +82,13 @@ export async function POST(request: NextRequest) {
                         name: true,
                     },
                 },
-                manager: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                    },
-                },
+                // manager: { // Commented out - relation not present in this schema version
+                //     select: {
+                //         id: true,
+                //         fullName: true,
+                //         email: true,
+                //     },
+                // },
                 _count: {
                     select: {
                         users: true,

@@ -1,0 +1,122 @@
+﻿
+> web@0.1.0 build
+> next build
+
+node.exe : [baseline-browser-mapping] The data in this module is 
+over two months old.  To ensure accurate Baseline data, please 
+update: `npm i baseline-browser-mapping@latest -D`
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Users\yaros\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: ([baseline-brows...pi 
+   ng@latest -D`:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   тЦ▓ Next.js 16.0.3 (Turbopack)
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+ тЬУ Compiled successfully in 6.3s
+   Running TypeScript ...
+   Collecting page data using 11 workers ...
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+   Generating static pages using 11 workers (0/44) ...
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: 
+`npm i baseline-browser-mapping@latest -D`
+   Generating static pages using 11 workers (11/44) 
+   Generating static pages using 11 workers (22/44) 
+ тип useSearchParams() should be wrapped in a suspense boundary 
+at page "/auth/callback". Read more: 
+https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at S (C:\Users\yaros\.gemini\antigravity\playground\crystal-ku
+iper\apps\web\.next\server\chunks\ssr\1d6c9_next_ebc2bc65._.js:2:2
+111)
+    at p (C:\Users\yaros\.gemini\antigravity\playground\crystal-ku
+iper\apps\web\.next\server\chunks\ssr\1d6c9_next_ebc2bc65._.js:4:4
+844)
+    at g (C:\Users\yaros\.gemini\antigravity\playground\crystal-ku
+iper\apps\web\.next\server\chunks\ssr\apps_web_src_85f5101e._.js:1
+:1342)
+    at ar (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:84366)
+    at aa (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:86185)
+    at as (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:107952)
+    at ao (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:105374)
+    at an (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:84718)
+    at aa (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:86234)
+    at aa (C:\Users\yaros\.gemini\antigravity\playground\crystal-k
+uiper\node_modules\.pnpm\next@16.0.3_@babel+core@7.28.5_babel-plug
+in-react-compiler@1.0.0_react-dom@19.2.0_react@19.2.0__react@19.2.
+0\node_modules\next\dist\compiled\next-server\app-page-turbo.runti
+me.prod.js:2:104714)
+Error occurred prerendering page "/auth/callback". Read more: 
+https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /auth/callback/page: 
+/auth/callback, exiting the build.
+ тип Next.js build worker exited with code: 1 and signal: null

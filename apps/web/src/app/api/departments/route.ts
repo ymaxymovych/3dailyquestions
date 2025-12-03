@@ -15,13 +15,13 @@ export async function GET(request: NextRequest) {
         const departments = await prisma.department.findMany({
             where: { orgId },
             include: {
-                manager: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                    },
-                },
+                // manager: { // Commented out - relation not present in this schema version
+                //     select: {
+                //         id: true,
+                //         fullName: true,
+                //         email: true,
+                //     },
+                // },
                 teams: {
                     select: {
                         id: true,
@@ -68,18 +68,17 @@ export async function POST(request: NextRequest) {
         const department = await prisma.department.create({
             data: {
                 name,
-                description,
                 managerId,
                 orgId,
             },
             include: {
-                manager: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                    },
-                },
+                // manager: { // Commented out - relation not present in this schema version
+                //     select: {
+                //         id: true,
+                //         fullName: true,
+                //         email: true,
+                //     },
+                // },
                 teams: true,
                 _count: {
                     select: {

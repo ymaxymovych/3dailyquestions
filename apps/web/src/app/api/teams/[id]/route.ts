@@ -5,9 +5,10 @@ import { prisma } from '@repo/database';
 // PATCH /api/teams/[id] - Update a team
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // MOCK AUTH: Get first user for dev environment
         const mockUser = await prisma.user.findFirst();
         if (!mockUser || !mockUser.orgId) {
@@ -19,7 +20,7 @@ export async function PATCH(
         const { name, description, deptId, managerId } = body;
 
         const team = await prisma.team.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 ...(name && { name }),
                 ...(description !== undefined && { description }),
@@ -33,13 +34,13 @@ export async function PATCH(
                         name: true,
                     },
                 },
-                manager: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                    },
-                },
+                // manager: { // Commented out to prevent potential relation errors during recovery
+                //     select: {
+                //         id: true,
+                //         fullName: true,
+                //         email: true,
+                //     },
+                // },
                 _count: {
                     select: {
                         users: true,
@@ -61,9 +62,10 @@ export async function PATCH(
 // DELETE /api/teams/[id] - Delete a team
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         // MOCK AUTH: Get first user for dev environment
         const mockUser = await prisma.user.findFirst();
         if (!mockUser || !mockUser.orgId) {
@@ -72,7 +74,7 @@ export async function DELETE(
         const orgId = mockUser.orgId;
 
         await prisma.team.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ success: true });

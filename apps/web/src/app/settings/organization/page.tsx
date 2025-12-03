@@ -24,6 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, Users, Plus, Pencil, Trash2, UserCircle } from 'lucide-react';
+import { WizardOrganizationStep } from '@/components/wizard/WizardOrganizationStep';
 
 interface Department {
     id: string;
@@ -44,6 +45,89 @@ interface Team {
     department: { id: string; name: string };
     manager: { id: string; fullName: string; email: string } | null;
     _count: { users: number };
+}
+
+// Helper component for department creation flow
+function DepartmentCreationFlow({
+    onComplete,
+    onCancel
+}: {
+    onComplete: (archetypeCode?: string) => void;
+    onCancel: () => void;
+}) {
+    const [mode, setMode] = useState<'select' | 'custom'>('select');
+    const [customName, setCustomName] = useState('');
+    const [customDescription, setCustomDescription] = useState('');
+
+    if (mode === 'custom') {
+        return (
+            <>
+                <div className="space-y-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="customDeptName">Department Name *</Label>
+                        <Input
+                            id="customDeptName"
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value)}
+                            placeholder="e.g., Engineering, Sales"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="customDeptDescription">Description</Label>
+                        <Textarea
+                            id="customDeptDescription"
+                            value={customDescription}
+                            onChange={(e) => setCustomDescription(e.target.value)}
+                            placeholder="Optional description"
+                        />
+                    </div>
+                </div>
+                <DialogFooter className="flex gap-2">
+                    <Button variant="outline" onClick={() => setMode('select')}>
+                        Back
+                    </Button>
+                    <Button
+                        onClick={async () => {
+                            try {
+                                const response = await fetch('/api/departments', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        name: customName,
+                                        description: customDescription || null,
+                                    }),
+                                });
+                                if (response.ok) {
+                                    onComplete(undefined); // undefined = custom
+                                }
+                            } catch (error) {
+                                console.error('Failed to create custom department:', error);
+                            }
+                        }}
+                        disabled={!customName}
+                    >
+                        Create
+                    </Button>
+                </DialogFooter>
+            </>
+        );
+    }
+
+    return (
+        <WizardOrganizationStep
+            disableCustomRedirect
+            onComplete={(archetypeCode) => {
+                if (archetypeCode) {
+                    // Archetype selected
+                    onComplete(archetypeCode);
+                } else {
+                    // Custom mode selected
+                    setMode('custom');
+                }
+            }}
+        />
+    );
 }
 
 export default function OrganizationPage() {
@@ -393,7 +477,7 @@ export default function OrganizationPage() {
 
             {/* Department Dialog */}
             <Dialog open={deptDialogOpen} onOpenChange={setDeptDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             {editingDept ? 'Edit Department' : 'Add Department'}
@@ -401,37 +485,91 @@ export default function OrganizationPage() {
                         <DialogDescription>
                             {editingDept
                                 ? 'Update department information'
-                                : 'Create a new department in your organization'}
+                                : 'Choose a department template or create a custom department'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="deptName">Department Name *</Label>
-                            <Input
-                                id="deptName"
-                                value={deptName}
-                                onChange={(e) => setDeptName(e.target.value)}
-                                placeholder="e.g., Engineering, Sales"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="deptDescription">Description</Label>
-                            <Textarea
-                                id="deptDescription"
-                                value={deptDescription}
-                                onChange={(e) => setDeptDescription(e.target.value)}
-                                placeholder="Optional description"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeptDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveDept} disabled={!deptName}>
-                            {editingDept ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogFooter>
+                    {editingDept ? (
+                        // Edit mode - simple form
+                        <>
+                            <div className="space-y-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="deptName">Department Name *</Label>
+                                    <Input
+                                        id="deptName"
+                                        value={deptName}
+                                        onChange={(e) => setDeptName(e.target.value)}
+                                        placeholder="e.g., Engineering, Sales"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="deptDescription">Description</Label>
+                                    <Textarea
+                                        id="deptDescription"
+                                        value={deptDescription}
+                                        onChange={(e) => setDeptDescription(e.target.value)}
+                                        placeholder="Optional description"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setDeptDialogOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveDept} disabled={!deptName}>
+                                    Update
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    ) : (
+                        // Create mode - use WizardOrganizationStep
+                        <DepartmentCreationFlow
+                            onComplete={async (archetypeCode) => {
+                                if (archetypeCode) {
+                                    // User selected archetype
+                                    try {
+                                        const archetypeResponse = await fetch(`/api/role-archetypes/departments/${archetypeCode}`);
+                                        if (!archetypeResponse.ok) throw new Error('Failed to fetch archetype');
+                                        const archetype = await archetypeResponse.json();
+
+                                        // Create department from archetype
+                                        const response = await fetch('/api/departments', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                name: archetype.name,
+                                                archetypeId: archetype.id,
+                                            }),
+                                        });
+
+                                        if (response.ok) {
+                                            toast({
+                                                title: 'Success',
+                                                description: 'Department created successfully',
+                                            });
+                                            setDeptDialogOpen(false);
+                                            fetchData();
+                                        }
+                                    } catch (error) {
+                                        console.error('Failed to create department:', error);
+                                        toast({
+                                            title: 'Error',
+                                            description: 'Failed to create department',
+                                            variant: 'destructive',
+                                        });
+                                    }
+                                } else {
+                                    // Custom department was created inside DepartmentCreationFlow
+                                    toast({
+                                        title: 'Success',
+                                        description: 'Custom department created successfully',
+                                    });
+                                    setDeptDialogOpen(false);
+                                    fetchData();
+                                }
+                            }}
+                            onCancel={() => setDeptDialogOpen(false)}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
 

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@repo/database';
 
-
-// GET /api/setup/status - Get organization setup status and feature flags
+// GET /api/setup/organization/status - Get organization setup status and feature flags
 export async function GET(request: NextRequest) {
     try {
         // MOCK AUTH: Get first user for dev environment
+        // In production, use actual auth context
         const mockUser = await prisma.user.findFirst();
         if (!mockUser || !mockUser.orgId) {
             return NextResponse.json({ error: 'No user found' }, { status: 401 });
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/setup/status - Update wizard state
+// POST /api/setup/organization/status - Update wizard state
 export async function POST(request: NextRequest) {
     try {
         // MOCK AUTH: Get first user for dev environment
@@ -121,20 +121,20 @@ export async function POST(request: NextRequest) {
         const orgId = mockUser.orgId;
 
         const body = await request.json();
-        const { wizardCompleted, wizardSkipped, currentStep } = body;
+        const { orgWizardCompleted, orgWizardSkipped, orgCurrentStep } = body;
 
         const setup = await prisma.organizationSetup.upsert({
             where: { orgId },
             create: {
                 orgId,
-                orgWizardCompleted: wizardCompleted || false,
-                orgWizardSkipped: wizardSkipped || false,
-                orgCurrentStep: currentStep || 1,
+                orgWizardCompleted: orgWizardCompleted || false,
+                orgWizardSkipped: orgWizardSkipped || false,
+                orgCurrentStep: orgCurrentStep || 1,
             },
             update: {
-                ...(wizardCompleted !== undefined && { orgWizardCompleted: wizardCompleted }),
-                ...(wizardSkipped !== undefined && { orgWizardSkipped: wizardSkipped }),
-                ...(currentStep !== undefined && { orgCurrentStep: currentStep }),
+                ...(orgWizardCompleted !== undefined && { orgWizardCompleted }),
+                ...(orgWizardSkipped !== undefined && { orgWizardSkipped }),
+                ...(orgCurrentStep !== undefined && { orgCurrentStep }),
             },
         });
 

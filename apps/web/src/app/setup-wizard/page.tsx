@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import {
     ArrowLeft,
@@ -65,7 +64,7 @@ const WIZARD_STEPS = [
     },
 ];
 
-export default function SetupWizardPage() {
+function SetupWizardContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const shouldAdvance = searchParams.get('advance') === 'true';
@@ -186,7 +185,12 @@ export default function SetupWizardPage() {
 
                 {/* Progress Bar */}
                 <div className="mb-8">
-                    <Progress value={progress} className="h-2 mb-4" />
+                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary mb-4">
+                        <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
                     <div className="flex justify-between">
                         {WIZARD_STEPS.map((step, index) => {
                             const StepIcon = step.icon;
@@ -411,5 +415,17 @@ function StatusCard({ title, status }: { title: string; status: 'configured' | '
                 {status === 'configured' ? '✓ Configured' : status === 'optional' ? 'Optional' : 'Pending'}
             </Badge>
         </div>
+    );
+}
+
+export default function SetupWizardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        }>
+            <SetupWizardContent />
+        </Suspense>
     );
 }

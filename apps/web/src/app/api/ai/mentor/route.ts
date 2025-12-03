@@ -103,7 +103,6 @@ export async function POST(request: NextRequest) {
                 userId,
                 type: 'EMPLOYEE_MENTOR',
                 content: advice.content,
-                metadata: advice.metadata,
             },
         });
 

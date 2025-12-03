@@ -110,9 +110,13 @@ export async function POST(request: NextRequest) {
             data: {
                 managerId: userId,
                 date: targetDate,
-                summary: digest.summary,
-                highlights: digest.highlights,
-                concerns: digest.concerns,
+                content: {
+                    summary: digest.summary,
+                    highlights: digest.highlights,
+                    concerns: digest.concerns,
+                    peopleNeedingAttention: digest.peopleNeedingAttention,
+                    metrics: digest.metrics,
+                },
             },
         });
 
