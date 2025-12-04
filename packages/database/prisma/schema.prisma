@@ -1044,3 +1044,62 @@ model OrganizationSetup {
   
   @@map("organization_setup")
 }
+
+// --- Email System ---
+
+enum EmailCategory {
+  ACCESS
+  ONBOARDING
+  LEGAL
+  MARKETING
+}
+
+model EmailTemplate {
+  id            String        @id @default(uuid())
+  code          String        @unique // REG_CONFIRM_EMAIL, AUTH_PASSWORD_RESET, etc.
+  name          String
+  description   String?
+  category      EmailCategory
+  critical      Boolean       @default(false)
+  enabled       Boolean       @default(true)
+  recipients    String[]      // ["All Roles", "Admin", etc.]
+  triggers      String?       // "User registration", "Password reset", etc.
+  variables     String[]      // ["user_name", "confirmation_link", etc.]
+  
+  // Translations (JSON for flexibility with future languages)
+  templates     Json          // { "uk": { subject, body }, "en": { subject, body } }
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@map("email_templates")
+}
+
+model EmailLog {
+  id          String   @id @default(uuid())
+  templateId  String
+  recipient   String
+  status      String   // "sent", "failed", "queued"
+  error       String?
+  metadata    Json?
+  
+  sentAt      DateTime @default(now())
+  
+  @@index([recipient])
+  @@index([templateId])
+  @@index([sentAt])
+  @@map("email_logs")
+}
+
+model Subscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  status    String   @default("pending") // "confirmed", "pending", "unsubscribed"
+  source    String?  // "landing_page", "invite", etc.
+  language  Language @default(UK)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("subscribers")
+}

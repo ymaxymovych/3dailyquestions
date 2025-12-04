@@ -42,9 +42,13 @@
   - [ ] **User Profile**: Event Timeline (Sent/Replied/Error), Manual Trigger.
   - [ ] **Scenario Builder (MVP)**: Edit Intro/Questions/Summary Prompt for the main flow.
   - [ ] **Logs**: Basic error table.
-- [ ] **Email System**:
-  - [ ] Integrate React Email + Resend.
-  - [ ] Templates: Welcome, Invite, Daily Digest.
+- [x] **Email System** (📧 UI інтегровано 2025-12-04):
+  - [x] **Prisma Models**: `EmailTemplate`, `EmailLog`, `Subscriber` — DONE.
+  - [x] **API Routes**: `/api/email-templates`, `/api/email-logs` — DONE.
+  - [x] **UI Integration**: `/settings/emails/` (Dashboard, Templates, Editor, Logs) — DONE.
+  - [ ] **Provider**: Resend (рекомендовано) — 3000 листів/міс безкоштовно.
+  - [ ] **DNS Setup** для `aiadvisoryboard.me`: SPF, DKIM, DMARC записи.
+  - [ ] **Real Email Sending**: Integrate Resend API for actual delivery.
 - [ ] **Knowledge Base**:
   - [ ] Role definitions & KPI sets (JSON-based for MVP).
 - [ ] **Integrations**:
@@ -132,3 +136,15 @@
   - [ ] Streak distribution (how many users have 7+ day streaks).
   - [ ] Weekly Active Users (WAU) trend.
   - [ ] Companies with 0 activity in last 7 days.
+
+## 🖥️ Infrastructure & Hosting
+- **Development Environment**:
+  - Docker on Windows 11 (домашній комп'ютер).
+  - PostgreSQL в Docker container.
+  - Next.js dev server (`npm run dev`).
+- **Production Migration** (після завершення розробки):
+  - [ ] Перенести на повноцінний сервер (VPS/Dedicated).
+  - [ ] Налаштувати Docker Compose для production.
+  - [ ] SSL сертифікат (Let's Encrypt).
+  - [ ] Reverse proxy (Nginx/Traefik).
+  - [ ] CI/CD pipeline (GitHub Actions → deploy to server).

@@ -1,74 +1,68 @@
-# 🧭 Walkthrough — Crystal Kuiper
+# Email UI Integration Walkthrough
 
-## Latest Changes (2025-12-04)
+## Summary
+Інтегровано Email Admin Panel з `ai-advisory-admin/` в основний Next.js проект.
 
-### ✅ Super Admin Dashboard MVP
+## What Was Done
 
-Додано внутрішню адмінку для команди Crystal Kuiper.
+### 1. Database Layer
+- **Schema**: Added 3 models to `packages/database/prisma/schema.prisma`:
+  - `EmailTemplate` — stores templates with multi-language support (JSON)
+  - `EmailLog` — tracks sent emails
+  - `Subscriber` — newsletter subscribers
+  - `EmailCategory` enum (ACCESS, ONBOARDING, LEGAL, MARKETING)
+- **Migration**: `20251204063533_add_email_system` — creates 3 tables.
+- **Seed Script**: `prisma/seed/seed-emails.ts` — 14 templates (UA/EN).
 
-| Сторінка | URL | Опис |
-|----------|-----|------|
-| Dashboard | `/internal` | Пульс системи: метрики, графік, проблемні компанії |
-| Companies | `/internal/companies` | Список компаній з пошуком |
-| Company Profile | `/internal/companies/[id]` | Деталі + Impersonation |
+### 2. API Routes
+| Route | Methods | Description |
+|-------|---------|-------------|
+| `/api/email-templates` | GET, POST | List/create templates |
+| `/api/email-templates/[id]` | GET, PUT, DELETE | Single template CRUD |
+| `/api/email-templates/[id]/test` | POST | Send test email (mock) |
+| `/api/email-logs` | GET, POST | Logs + stats |
 
-**Як перевірити:**
-1. Запусти `pnpm run dev`
-2. Залогінься через Google (`yaroslav.maxymovych@gmail.com`)
-3. Перейди на `http://localhost:3000/internal`
+### 3. Frontend Pages
+All under `/settings/emails/`:
+- **Dashboard** — Stats cards, chart placeholders
+- **Templates** — List with category filter, search, toggle
+- **Template Editor** — UA/EN tabs, Markdown, preview, test modal
+- **Logs** — Paginated table with status badges
+- **Subscribers** — Mock data list
+- **Settings** — Sender config, quiet hours
 
-**Impersonation тест:**
-1. В Company Profile → таб "Users"
-2. Натисни "Login As" біля будь-якого юзера
-3. Підтверди → побачиш оранжеву рамку + банер
+### 4. Navigation
+- Added "Email Templates" to Settings sidebar (`/settings/page.tsx`)
 
-**Нові файли:**
-- `apps/web/src/app/(super-admin)/` — роути
-- `apps/web/src/components/admin/` — компоненти
-- `apps/web/src/actions/admin/` — серверні екшени
-- `.ai-context/SUPER_ADMIN_GUIDE.md` — повна документація
+## How to Test
 
----
+1. **Seed the database** (if not done):
+   ```bash
+   cd packages/database
+   npx ts-node prisma/seed/seed-emails.ts
+   ```
 
-### ✅ Voice Input "Magic Draft"
+2. **Run dev server**:
+   ```bash
+   npm run dev
+   ```
 
-Голосовий ввід для Daily Report (поки mock).
+3. **Navigate to Email Admin**:
+   - Go to `/settings` → AI Advisory Board → Email Templates
+   - Or directly: `http://localhost:3000/settings/emails`
 
-**Як перевірити:**
-1. Перейди на `/my-day`
-2. Натисни червону кнопку мікрофона
-3. "Запиши" голос → натисни Stop
-4. Побачиш автозаповнені поля
+4. **Verify**:
+   - Dashboard loads with stats
+   - Templates list shows 14 items
+   - Click on a template → Editor opens
+   - Switch UA/EN → content changes
+   - Click Preview tab → Markdown renders
+   - Click "Send Test" → Modal opens
 
----
-
-## Структура проекту
-
-```
-apps/web/src/
-├── app/
-│   ├── (super-admin)/      # 🆕 Адмінка
-│   │   └── internal/
-│   │       ├── page.tsx        # Dashboard
-│   │       └── companies/
-│   │           ├── page.tsx    # List
-│   │           └── [id]/page.tsx  # Profile
-│   ├── my-day/             # Щоденний звіт
-│   ├── settings/           # Налаштування
-│   └── ...
-├── components/
-│   ├── admin/              # 🆕 Адмін компоненти
-│   ├── my-day/             # Voice Input та ін.
-│   └── ui/                 # shadcn/ui
-└── actions/
-    ├── admin/              # 🆕 Серверні екшени
-    └── ...
-```
-
----
-
-## Документація
-
-- **[SUPER_ADMIN_GUIDE.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/SUPER_ADMIN_GUIDE.md)** — як користуватись адмінкою
-- **[ARCHITECTURE.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/ARCHITECTURE.md)** — загальна архітектура
-- **[BACKLOG.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/BACKLOG.md)** — ідеї на майбутнє
+## Files Changed
+- `packages/database/prisma/schema.prisma` — Added 3 models
+- `packages/database/prisma/seed/seed-emails.ts` — NEW
+- `apps/web/src/app/api/email-templates/` — NEW (4 files)
+- `apps/web/src/app/api/email-logs/route.ts` — NEW
+- `apps/web/src/app/settings/emails/` — NEW (7 files)
+- `apps/web/src/app/settings/page.tsx` — Added navigation

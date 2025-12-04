@@ -15,6 +15,7 @@ import {
     Target,
     Plug,
     Brain,
+    Mail,
     ChevronRight,
     Sparkles
 } from "lucide-react";
@@ -92,6 +93,7 @@ const settingsCategories: SettingsCategory[] = [
             { id: "organization", label: "Organization Structure", icon: Building2, component: () => null, adminOnly: true },
             { id: "roles", label: "Job Roles", icon: Briefcase, component: () => null, adminOnly: true },
             { id: "archetypes", label: "Role Archetypes", icon: Briefcase, component: () => null, adminOnly: true },
+            { id: "emails", label: "Email Templates", icon: Mail, component: () => null, adminOnly: true },
         ]
     },
     {
@@ -210,6 +212,8 @@ export default function SettingsPage() {
                                                             window.location.href = '/settings/ai-advisory';
                                                         } else if (item.id === 'ai-config') {
                                                             window.location.href = '/settings/ai-config';
+                                                        } else if (item.id === 'emails') {
+                                                            window.location.href = '/settings/emails';
                                                         } else {
                                                             setSelectedItem(item.id);
                                                         }
