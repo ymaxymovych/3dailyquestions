@@ -2,6 +2,13 @@
 *Passive storage. Do not process during active coding sessions to save tokens.*
 
 ## 🚀 High Priority
+- [ ] **Onboarding Settings Page** (`/settings/onboarding`): 
+  - Створити повноцінну Settings сторінку з **прогресом** (progress bar, percentage) та **role-adaptive чеклістами**
+  - Швидкі лінки для re-configuration будь-якого кроку (Company, Personal, Team)
+  - Status badges (Complete ✅ / Pending ⏳ / Skipped ⏭️) для кожного пункту
+  - API endpoint для tracking прогресу: `GET /api/onboarding/status`
+  - **Мета**: Значно покращить UX та професійний вигляд продукту
+  - **Примітка**: Зараз НЕ робимо, виконуємо після мануального тестування візардів
 - [ ] **Department Onboarding Wizard**: Separate flow for Department Heads to set up goals and teams specifically for their department.
 - [ ] **E2E Testing**: Add Cypress/Playwright tests for the full wizard flow.
 - [ ] **Middleware Wizard Gatekeeper**: Implement automatic redirection to wizards based on completion status (currently handled by smart redirector page).
