@@ -1,99 +1,74 @@
-# Walkthrough: Divide and Adapt Onboarding Strategy
+# 🧭 Walkthrough — Crystal Kuiper
 
-## Overview
-We have successfully implemented the "Divide and Adapt" onboarding strategy, splitting the monolithic wizard into two distinct, specialized flows: **Organization Wizard** and **User Wizard**. This ensures a tailored experience for Admins, Managers, and Employees.
+## Latest Changes (2025-12-04)
 
-## Changes Implemented
+### ✅ Super Admin Dashboard MVP
 
-### 1. Organization Wizard (`/setup-wizard/organization`)
-- **Purpose**: Exclusively for Admins/Owners to set up the company.
-- **Steps**:
-    1.  **Welcome**: Vision & Goals.
-    2.  **Company Profile**: Name, Industry, Size.
-    3.  **Structure**: Departments & Teams (link to Admin Settings).
-    4.  **Work Schedule**: Working days, hours, timezone.
-    5.  **AI Policy**: Provider (OpenAI/Anthropic) and Tone.
-    6.  **Complete**: Redirects to User Wizard.
-- **API Routes**:
-    - `PATCH /api/organization` (Basic Info)
-    - `PATCH /api/organization/settings` (Work Schedule)
-    - `PATCH /api/organization/ai-settings` (AI Policy)
+Додано внутрішню адмінку для команди Crystal Kuiper.
 
-### 2. User Wizard (`/setup-wizard/user`)
-- **Purpose**: Personal setup for all users (including Admins after Org setup).
-- **Adaptive Logic**:
-    - **Managers**: Prompted to **Create** or **Manage** their team.
-    - **Employees**: Prompted to **Join** an existing team in their department.
-    - **Admins**: Can skip team setup or configure their own profile.
-- **Steps**:
-    1.  **Welcome**: Overview.
-    2.  **Basic Info**: Name, Job Title, Bio.
-    3.  **Team & Role**: Adaptive step (Create vs Join).
-    4.  **Preferences**: Work hours, Notifications.
-    5.  **Complete**: Redirects to Dashboard (`/my-day`).
-- **Components**:
-    - `TeamStep.tsx`: Handles the logic for creating vs joining teams.
-    - `BasicInfoStep.tsx`: Profile editing.
-    - `PreferencesStep.tsx`: User settings.
-- **API Routes**:
-    - `GET /api/departments/[id]/teams`
-    - `POST /api/teams`
-    - `POST /api/teams/[id]/join`
-    - `PATCH /api/user/profile`
-    - `PATCH /api/user/preferences`
+| Сторінка | URL | Опис |
+|----------|-----|------|
+| Dashboard | `/internal` | Пульс системи: метрики, графік, проблемні компанії |
+| Companies | `/internal/companies` | Список компаній з пошуком |
+| Company Profile | `/internal/companies/[id]` | Деталі + Impersonation |
 
-### 3. Smart Routing (`/setup-wizard`)
-- The main `/setup-wizard` page now acts as a **smart redirector**.
-- Checks `/api/setup/organization/status`.
-- **Logic**:
-    - If Organization Setup is **incomplete** -> Redirects to `/setup-wizard/organization`.
-    - If Organization Setup is **complete** -> Redirects to `/setup-wizard/user`.
+**Як перевірити:**
+1. Запусти `pnpm run dev`
+2. Залогінься через Google (`yaroslav.maxymovych@gmail.com`)
+3. Перейди на `http://localhost:3000/internal`
 
-## Verification Steps
+**Impersonation тест:**
+1. В Company Profile → таб "Users"
+2. Натисни "Login As" біля будь-якого юзера
+3. Підтверди → побачиш оранжеву рамку + банер
 
-### Automated Verification
-Run the following commands to ensure the build passes and no linting errors were introduced:
-```bash
-npm run build
-npm run lint
+**Нові файли:**
+- `apps/web/src/app/(super-admin)/` — роути
+- `apps/web/src/components/admin/` — компоненти
+- `apps/web/src/actions/admin/` — серверні екшени
+- `.ai-context/SUPER_ADMIN_GUIDE.md` — повна документація
+
+---
+
+### ✅ Voice Input "Magic Draft"
+
+Голосовий ввід для Daily Report (поки mock).
+
+**Як перевірити:**
+1. Перейди на `/my-day`
+2. Натисни червону кнопку мікрофона
+3. "Запиши" голос → натисни Stop
+4. Побачиш автозаповнені поля
+
+---
+
+## Структура проекту
+
+```
+apps/web/src/
+├── app/
+│   ├── (super-admin)/      # 🆕 Адмінка
+│   │   └── internal/
+│   │       ├── page.tsx        # Dashboard
+│   │       └── companies/
+│   │           ├── page.tsx    # List
+│   │           └── [id]/page.tsx  # Profile
+│   ├── my-day/             # Щоденний звіт
+│   ├── settings/           # Налаштування
+│   └── ...
+├── components/
+│   ├── admin/              # 🆕 Адмін компоненти
+│   ├── my-day/             # Voice Input та ін.
+│   └── ui/                 # shadcn/ui
+└── actions/
+    ├── admin/              # 🆕 Серверні екшени
+    └── ...
 ```
 
-### Manual Verification
-1.  **Admin Flow**:
-    - Log in as a new Admin (or reset `orgWizardCompleted` in DB).
-    - Go to `/setup-wizard`.
-    - Verify redirection to `/setup-wizard/organization`.
-    - Complete Org Wizard.
-    - Verify redirection to `/setup-wizard/user`.
-    - Complete User Wizard as Admin.
-    - Verify redirection to `/my-day`.
+---
 
-2.  **Employee Flow** (Requires Invite logic or manual DB setup):
-    - Log in as a user in an existing Org.
-    - Go to `/setup-wizard`.
-    - Verify redirection to `/setup-wizard/user` (since Org is done).
-    - Verify "Team Step" shows "Join Team" options.
+## Документація
 
-3.  **Manager Flow**:
-    - Verify "Team Step" shows "Create Team" options.
-
-### 4. Voice Input "Magic Draft" Verification
-1.  **Initial Fill**:
-    - Go to `/my-day`.
-    - Click the Microphone FAB (bottom-right).
-    - Click "Start Listening" -> Wait 2s -> Click "Finish".
-    - **Verify**: Form is filled with "Yesterday..." and "Today..." data.
-2.  **Smart Append**:
-    - Click Microphone FAB again.
-    - Click "Start Listening" -> Wait 2s -> Click "Finish".
-    - **Verify**:
-        - New text appended to "Summary" or "Unplanned" (check for "Додатково...").
-        - New task added to "Medium Tasks".
-        - **Toast**: Shows "Undo" button.
-3.  **Undo**:
-    - Immediately click "Undo" on the toast.
-    - **Verify**: The appended text/tasks disappear.
-4.  **Big Task Displacement**:
-    - Ensure a Big Task exists.
-    - Use Voice Input (First Run) which sets a Big Task.
-    - **Verify**: The *old* Big Task moves to "Medium Tasks" with `[Moved from Big Task]` prefix.
+- **[SUPER_ADMIN_GUIDE.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/SUPER_ADMIN_GUIDE.md)** — як користуватись адмінкою
+- **[ARCHITECTURE.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/ARCHITECTURE.md)** — загальна архітектура
+- **[BACKLOG.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/BACKLOG.md)** — ідеї на майбутнє

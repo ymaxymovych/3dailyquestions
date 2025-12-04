@@ -18,11 +18,13 @@
   - **Backend**: Next.js API Routes, Prisma ORM.
   - **Database**: PostgreSQL (implied by Prisma).
   - **Authentication**: Custom/NextAuth (Google Provider).
-- **Key Modules**:
-  - `Setup Wizard`: Onboarding for Organizations and Users (`/setup-wizard`).
-  - `Admin Panel`: Structure management (`/admin`).
-  - `My Day`: Employee daily dashboard (`/my-day`).
-  - `Settings`: User and Organization configuration.
+- **Architecture Style**: Modular Monolith (see [.ai-context/ARCHITECTURE.md](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/.ai-context/ARCHITECTURE.md)).
+- **Key Modules** (Route Groups):
+  - `(marketing)`: Public Landing & Blog.
+  - `(auth)`: Login/Register.
+  - `(onboarding)`: Setup Wizard.
+  - `(platform)`: Core App (Employee/Manager/Admin views).
+  - `(super-admin)`: Internal Support & Monitoring.
 
 ## 🧠 ENGINEERING PHILOSOPHY & RULES
 
