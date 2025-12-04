@@ -49,6 +49,66 @@
   - [ ] **Provider**: Resend (рекомендовано) — 3000 листів/міс безкоштовно.
   - [ ] **DNS Setup** для `aiadvisoryboard.me`: SPF, DKIM, DMARC записи.
   - [ ] **Real Email Sending**: Integrate Resend API for actual delivery.
+
+### 📧 Email System Improvements
+- [ ] **Template Variables Preview**: Mock preview з реальними значеннями (user_name = "Іван Петренко")
+- [ ] **Email Queue**: Bull/BullMQ queue замість sync send, retry on failure, rate limiting
+- [ ] **A/B Testing**: 2 версії subject line, random split, tracking open rate per version
+- [ ] **Analytics Dashboard**: Open rate, click rate, bounce rate per template (tracking pixel)
+- [ ] **Personalization Engine**: Auto-fill {{first_name}} з user profile
+- [ ] **Localization Auto-detect**: Вибір мови по user.preferredLanguage
+- [ ] **Visual Email Builder**: Drag-drop blocks замість Markdown (MJML?)
+- [ ] **Scheduled Campaigns**: "Надіслати в понеділок о 10:00"
+- [ ] **Segmentation**: "Тільки менеджерам з >10 людей у команді"
+- [ ] **Unsubscribe Management**: One-click unsubscribe + preferences page
+
+### 📧 Email Use Cases
+- [ ] **Daily Standup Reminders**: Cron job о 9:00 "Час заповнити звіт!"
+- [ ] **Digest for Managers**: Підсумок дня команди після всіх відповідей
+- [ ] **Streak Notifications**: "5 днів поспіль! 🔥" після N послідовних звітів
+- [ ] **Re-engagement**: "Ми сумуємо..." якщо 3+ дні без активності
+- [ ] **Billing/Subscription**: Trial ending, Payment failed (Stripe webhooks)
+- [ ] **Weekly Summary**: Підсумок тижня для менеджерів (п'ятниця 17:00)
+
+### 📧 Email Edge Cases
+- [ ] **Bounce Handling**: Soft bounce (retry 3x), Hard bounce (mark email invalid, stop sending)
+- [ ] **Duplicate Prevention**: Не надсилати той самий шаблон двічі за 1 годину
+- [ ] **Rate Limiting**: Max 100 emails/user/day, max 1000/org/day
+- [ ] **Timezone Handling**: Надсилати о 9:00 *локального* часу користувача
+- [ ] **Unsubscribed Users**: Перевіряти статус перед кожною відправкою
+- [ ] **Email Validation**: Перевірка формату + MX record перед збереженням
+- [ ] **Template Fallback**: Якщо немає UA версії → використати EN
+- [ ] **Variable Missing**: Graceful degradation якщо {{var}} не передано
+- [ ] **Critical Email Bypass**: Критичні листи (password reset) ігнорують unsubscribe
+- [ ] **Org Disabled**: Не надсилати листи якщо організація заблокована
+- [ ] **User Deleted**: Cleanup email logs при видаленні користувача (GDPR)
+- [ ] **Email Change**: Invalidate old email, require re-confirmation
+- [ ] **Spam Score Check**: Перевірка subject/body на spam triggers перед відправкою
+
+### 📧 Email Metrics & KPIs
+- [ ] **Delivery Rate**: % успішно доставлених (target: >98%)
+- [ ] **Open Rate**: % відкритих листів (tracking pixel, target: >40%)
+- [ ] **Click Rate (CTR)**: % кліків по кнопках/посиланнях (target: >15%)
+- [ ] **Bounce Rate**: % відхилених (soft vs hard bounce, target: <2%)
+- [ ] **Unsubscribe Rate**: % відписок від marketing листів (target: <0.5%)
+- [ ] **Spam Complaint Rate**: % скарг на spam (target: <0.1%)
+- [ ] **Time to Open**: Середній час від відправки до відкриття
+- [ ] **Engagement Score**: Комбінований показник активності користувача
+
+### 📧 Email Automation Flows
+- [ ] **User Onboarding Flow**:
+  - Day 0: Welcome Email → Day 1: "How to..." tips → Day 3: First standup nudge → Day 7: Check-in
+- [ ] **Team Activation Flow**:
+  - Team created → 24h: Setup reminder → 48h: Final reminder → 72h: Personal outreach
+- [ ] **Re-engagement Flow**:
+  - 3 days inactive → Soft reminder → 7 days → "We miss you" → 14 days → Win-back offer
+- [ ] **Manager Digest Flow**:
+  - Daily: Team summary → Weekly (Fri): Week review → Monthly: Trends report
+- [ ] **Trial-to-Paid Flow**:
+  - Day 1: Trial started → Day 7: Mid-trial tips → Day 12: Trial ending soon → Day 14: Last chance
+- [ ] **Streak Celebration Flow**:
+  - 5 days → Badge 🥉 → 10 days → Badge 🥈 → 30 days → Badge 🥇 → 100 days → Special 🏆
+
 - [ ] **Knowledge Base**:
   - [ ] Role definitions & KPI sets (JSON-based for MVP).
 - [ ] **Integrations**:
