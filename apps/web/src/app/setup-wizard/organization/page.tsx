@@ -12,6 +12,7 @@ import { Building2, Users, Target, Settings, CheckCircle2, ArrowRight, ArrowLeft
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { WizardBanner } from '@/components/wizard/WizardBanner';
 
 // Types
 interface WizardStep {
@@ -27,6 +28,14 @@ const WIZARD_STEPS: WizardStep[] = [
     { id: 3, title: 'Goals', description: 'Set company objectives', icon: <Target className="w-5 h-5" /> },
     { id: 4, title: 'Process', description: 'Daily routine settings', icon: <Settings className="w-5 h-5" /> },
     { id: 5, title: 'Finish', description: 'Review & Launch', icon: <CheckCircle2 className="w-5 h-5" /> },
+];
+
+const STEP_NAMES = [
+    'Company Profile',
+    'Organization Structure',
+    'Company Goals',
+    'Daily Process',
+    'Complete Setup'
 ];
 
 function OrganizationWizardContent() {
@@ -313,31 +322,23 @@ function OrganizationWizardContent() {
                             ))}
                         </div>
 
-                        <div className="mt-8">
+                        <div className="mt-8 mb-32">
                             {renderStepContent(currentStep)}
-                        </div>
-
-                        <div className="flex justify-between mt-8 pt-6 border-t">
-                            <Button
-                                variant="outline"
-                                onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-                                disabled={currentStep === 1 || loading}
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back
-                            </Button>
-                            <Button
-                                onClick={handleNext}
-                                disabled={loading}
-                            >
-                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                {currentStep === WIZARD_STEPS.length ? 'Finish Setup' : 'Next Step'}
-                                {currentStep !== WIZARD_STEPS.length && <ArrowRight className="w-4 h-4 ml-2" />}
-                            </Button>
                         </div>
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Wizard Navigation Banner */}
+            <WizardBanner
+                currentStep={currentStep}
+                totalSteps={WIZARD_STEPS.length}
+                stepName={STEP_NAMES[currentStep - 1]}
+                onNext={handleNext}
+                onBack={() => setCurrentStep(prev => Math.max(1, prev - 1))}
+                nextDisabled={loading}
+                nextLabel={currentStep === WIZARD_STEPS.length ? 'Finish Setup' : 'Next Step'}
+            />
         </div>
     );
 }

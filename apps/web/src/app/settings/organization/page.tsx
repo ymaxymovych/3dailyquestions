@@ -25,6 +25,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, Users, Plus, Pencil, Trash2, UserCircle } from 'lucide-react';
 import { WizardOrganizationStep } from '@/components/wizard/WizardOrganizationStep';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { WizardBanner } from '@/components/wizard/WizardBanner';
+import api from '@/lib/api';
 
 interface Department {
     id: string;
@@ -131,6 +134,10 @@ function DepartmentCreationFlow({
 }
 
 export default function OrganizationPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const isWizardMode = searchParams.get('wizard') === 'true';
+
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [departments, setDepartments] = useState<Department[]>([]);
@@ -631,6 +638,27 @@ export default function OrganizationPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {isWizardMode && (
+                <WizardBanner
+                    currentStep={2}
+                    totalSteps={5}
+                    stepName="Organization Structure (Custom)"
+                    onNext={async () => {
+                        try {
+                            // Update status to move to next step
+                            await api.post('/setup/organization/status', { orgCurrentStep: 3 });
+                            router.push('/setup-wizard/organization');
+                        } catch (error) {
+                            console.error('Failed to update wizard status', error);
+                            // Fallback redirect
+                            router.push('/setup-wizard/organization');
+                        }
+                    }}
+                    onBack={() => router.push('/setup-wizard/organization')}
+                    className="lg:left-64"
+                />
+            )}
         </div>
     );
 }

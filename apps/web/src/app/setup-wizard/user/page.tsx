@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WizardJobRoleStep } from '@/components/wizard/WizardJobRoleStep';
+import { WizardBanner } from '@/components/wizard/WizardBanner';
 
 // Types
 interface WizardStep {
@@ -64,6 +65,14 @@ const WIZARD_STEPS: WizardStep[] = [
         description: "You're all set!",
         icon: Sparkles,
     },
+];
+
+const STEP_NAMES = [
+    'Welcome',
+    'Basic Information',
+    'Job Role Selection',
+    'Work Preferences',
+    'Setup Complete'
 ];
 
 function UserWizardContent() {
@@ -280,42 +289,20 @@ function UserWizardContent() {
                     </CardContent>
                 </Card>
 
-                {/* Navigation */}
-                <div className="flex items-center justify-between">
-                    <Button
-                        variant="outline"
-                        onClick={handleSkip}
-                        className="text-muted-foreground"
-                    >
-                        Skip for Now
-                    </Button>
-                    <div className="flex gap-2">
-                        {currentStep > 0 && (
-                            <Button variant="outline" onClick={handlePrevious}>
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Previous
-                            </Button>
-                        )}
-                        {currentStep < WIZARD_STEPS.length - 1 ? (
-                            // Hide Next button on Job Role step (index 2) as it has its own save button
-                            currentStep !== 2 && (
-                                <Button onClick={handleNext}>
-                                    Next
-                                    <ArrowRight className="h-4 w-4 ml-2" />
-                                </Button>
-                            )
-                        ) : (
-                            <Button
-                                onClick={handleComplete}
-                                className="bg-gradient-to-r from-green-600 to-purple-600"
-                            >
-                                <Check className="h-4 w-4 mr-2" />
-                                Complete Setup
-                            </Button>
-                        )}
-                    </div>
-                </div>
+                {/* Navigation handled by WizardBanner */}
             </div>
+
+            <WizardBanner
+                currentStep={currentStep + 1}
+                totalSteps={WIZARD_STEPS.length}
+                stepName={STEP_NAMES[currentStep]}
+                onNext={currentStep === WIZARD_STEPS.length - 1 ? handleComplete : handleNext}
+                onBack={handlePrevious}
+                onSkip={handleSkip}
+                hideNext={currentStep === 2} // Hide Next for Job Role step as it has its own control
+                hideBack={currentStep === 0}
+                nextLabel={currentStep === WIZARD_STEPS.length - 1 ? 'Complete Setup' : 'Next'}
+            />
         </div>
     );
 }
@@ -384,9 +371,6 @@ function BasicInfoStep({ onComplete }: { onComplete: () => void }) {
                 <p className="text-muted-foreground max-w-md mx-auto mb-6">
                     Your basic profile is set up from registration. You can update it in Settings.
                 </p>
-                <Button onClick={onComplete} size="lg">
-                    Continue
-                </Button>
             </div>
         </div>
     );
@@ -463,12 +447,7 @@ function PreferencesStep({ onComplete }: { onComplete: () => void }) {
                     You can configure notifications and work hours in Settings → Personal.
                 </p>
                 <div className="flex gap-3 justify-center">
-                    <Button variant="outline" onClick={onComplete}>
-                        Skip for Now
-                    </Button>
-                    <Button onClick={onComplete} size="lg">
-                        Continue
-                    </Button>
+                    {/* Controls moved to banner */}
                 </div>
             </div>
         </div>

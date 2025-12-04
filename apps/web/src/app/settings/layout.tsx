@@ -16,9 +16,6 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
     return (
         <AppLayout>
             {children}
-            <Suspense fallback={null}>
-                <WizardBanner />
-            </Suspense>
         </AppLayout>
     );
 }
