@@ -1,5 +1,9 @@
 # 🌍 PROJECT CONTEXT
 
+## 📦 Repository
+- **GitHub**: https://github.com/ymaxymovych/3dailyquestions
+- **Project Name**: Crystal Kuiper (3 Daily Questions SaaS Planner)
+
 ## 🎯 Jobs To Be Done (JTBD) & Vision
 - **Product Name**: Crystal Kuiper
 - **Product Goal**: A comprehensive SaaS Planner and Organization Management tool that streamlines company structure, goal setting (KPIs), and daily employee workflows.

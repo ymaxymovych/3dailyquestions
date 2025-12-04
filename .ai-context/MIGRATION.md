@@ -4,19 +4,36 @@
 
 ## 1. Як перенести проект (Міграція)
 
-Оскільки ми вже зберегли всі важливі артефакти в папку `.ai-context` всередині проекту, процес міграції дуже простий:
+**Проект вже перенесено в:** `C:\Projects\crystal-kuiper`
 
-1.  **Зупиніть сервер:** Натисніть `Ctrl+C` у терміналі, де запущено `npm run dev`.
-2.  **Перемістіть папку:**
-    - Візьміть всю папку `crystal-kuiper` з `c:\Users\yaros\.gemini\antigravity\playground\`.
-    - Перемістіть її в `C:\Projects\`.
-3.  **Відкрийте проект:**
-    - Відкрийте VS Code (або Cursor).
-    - `File` -> `Open Folder` -> Виберіть `C:\Projects\crystal-kuiper`.
+Якщо потрібно клонувати на новій машині:
+
+1.  **Клонуйте з GitHub:**
+    ```bash
+    cd C:\Projects
+    git clone https://github.com/ymaxymovych/3dailyquestions.git crystal-kuiper
+    cd crystal-kuiper
+    ```
+
+2.  **Встановіть залежності:**
+    ```bash
+    npm install
+    ```
+
+3.  **Налаштуйте БД (якщо потрібно):**
+    ```bash
+    cd packages/database
+    npx prisma migrate dev
+    cd ../..
+    ```
+
 4.  **Запустіть проект:**
-    - Відкрийте термінал у VS Code.
-    - Запустіть `npm install` (про всяк випадок, щоб оновити шляхи до залежностей).
-    - Запустіть `npm run dev`.
+    ```bash
+    npm run dev
+    ```
+
+5.  **Відкрийте Workspace в Antigravity:**
+    - File → Open Workspace → Виберіть `C:\Projects\crystal-kuiper`
 
 ---
 
