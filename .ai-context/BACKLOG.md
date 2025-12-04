@@ -34,3 +34,18 @@
 - [ ] **Confidence Indicators**: Show AI parsing confidence scores for each field
 - [ ] **Voice Memo Attachment**: Allow users to attach raw audio file to report
 
+## 🏗️ Future Modules (Architecture)
+- [ ] **Super Admin MVP**:
+  - [ ] Dashboard (Active Users, Reports Today, Errors).
+  - [ ] Impersonation (Login as User).
+  - [ ] Tenant Lookup.
+- [ ] **Email System**:
+  - [ ] Integrate React Email + Resend.
+  - [ ] Templates: Welcome, Invite, Daily Digest.
+- [ ] **Knowledge Base**:
+  - [ ] Role definitions & KPI sets (JSON-based for MVP).
+- [ ] **Integrations**:
+  - [ ] Google Calendar Sync.
+  - [ ] Slack Bot.
+
+

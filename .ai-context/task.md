@@ -1,16 +1,20 @@
-# Voice Input "Magic Draft" Implementation
+# Crystal Kuiper Task Tracker
 
 ## 📌 Current Focus (Short-Term Memory)
-*Last Updated: 2025-12-04T06:27:00+02:00*
+*Last Updated: 2025-12-04T07:10:00+02:00*
 
-**Immediate Goal**: Prepare for Real AI Integration (Whisper API) or Next Feature.
+**Immediate Goal**: Implement Real AI Integration (Whisper) & Setup Super Admin MVP.
 
 **Active Context** (files relevant to current task):
+- `.ai-context/ARCHITECTURE.md`
 - `apps/web/src/app/my-day/page.tsx`
 - `apps/web/src/components/my-day/VoiceInput.tsx`
-- `apps/web/src/lib/mockAIParser.ts`
 
 ## Completed Tasks
+- [x] **Architecture Planning**: Defined Modular Monolith structure <!-- id: 17 -->
+    - [x] Created `.ai-context/ARCHITECTURE.md` <!-- id: 18 -->
+    - [x] Defined Modules: Marketing, Auth, Platform, Admin, Super Admin, Emails <!-- id: 19 -->
+    - [x] Defined MVP vs V2 scope for Super Admin <!-- id: 20 -->
 - [x] Implement Voice Input "Magic Draft" for Daily Report <!-- id: 4 -->
     - [x] Create `VoiceInput` component (FAB + Modal) <!-- id: 5 -->
     - [x] Create `mockAIParser` utility <!-- id: 6 -->
@@ -29,9 +33,19 @@
 - [x] **UX**: Handle Microphone Permissions denied state (Mock)
 
 ## Pending Tasks
-- [ ] **Future**: Integrate Real AI Transcription (Whisper/Browser API) <!-- id: 11 -->
+- [ ] **Real AI Integration**: Connect OpenAI Whisper API <!-- id: 11 -->
+- [ ] **Super Admin MVP**: Implement `/internal/dashboard` and Impersonation <!-- id: 21 -->
+- [ ] **Refactoring**: Move existing pages to new `(platform)` route group structure <!-- id: 22 -->
 
 ## Recent Decisions / Notes
+
+### 2025-12-04: Architecture & MVP Strategy
+- **Modular Monolith**: Adopted a strict module structure using Next.js Route Groups (`(marketing)`, `(platform)`, `(super-admin)`).
+- **Super Admin MVP**:
+  - **Must Have**: Impersonation ("Login as User"), Basic Dashboard (Pulse), Tenant Lookup.
+  - **Later**: Complex editing, Analytics charts.
+- **Email System**: Will use React Email + Resend. Templates hardcoded for MVP.
+- **Voice Input**: Completed Mock phase, ready for Real AI.
 
 ### 2025-12-04: Voice Input Feature Complete 🚀
 - **Smart Merge**: Implemented intelligent merging of voice data:
@@ -40,15 +54,6 @@
 - **Safety Nets**:
   - **Undo**: Added "Undo" button to success toast.
   - **Duplicates**: Prevented adding identical tasks.
-- **Mock Logic**:
-  - `usageCount` simulates "First Run" (Full Fill) vs "Second Run" (Append).
-  - Short recordings (<1s) are ignored.
-  - Permission check simulation added.
-
-### Next Steps
-1.  Connect real OpenAI Whisper API.
-2.  Implement real microphone permission handling.
-3.  Test on mobile devices.
 
 ## Known Issues / TODOs
 - [ ] Voice input currently uses mock simulation (not real speech recognition)
