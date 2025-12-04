@@ -15,7 +15,8 @@ export function VoiceInput({ onTranscript }: VoiceInputProps) {
     const [transcript, setTranscript] = useState('');
     const [timer, setTimer] = useState(0);
 
-    // Mock simulation timeout
+    // Mock simulation state
+    const usageCount = useRef(0);
     const processingTimeoutRef = useRef<NodeJS.Timeout>(null);
     const timerIntervalRef = useRef<NodeJS.Timeout>(null);
 
@@ -26,6 +27,15 @@ export function VoiceInput({ onTranscript }: VoiceInputProps) {
     };
 
     const handleStartListening = () => {
+        // Simulate Permission Check
+        // In a real app: navigator.mediaDevices.getUserMedia({ audio: true })
+        const hasPermission = true; // Toggle this to test denied state
+
+        if (!hasPermission) {
+            alert("Будь ласка, надайте доступ до мікрофону в налаштуваннях браузера.");
+            return;
+        }
+
         setIsOpen(true);
         setIsListening(true);
         setTranscript('');
@@ -37,14 +47,33 @@ export function VoiceInput({ onTranscript }: VoiceInputProps) {
         }, 1000);
 
         // Simulate listening for 5 seconds then auto-stop (for demo purposes)
+        // In real app, this would wait for silence or manual stop
         setTimeout(() => {
             if (isOpen) {
-                setTranscript("Вчора я доробив дизайн сторінки налаштувань, але не встиг перевірити мобільну версію. Сьогодні планую фіксити баги в навігації та почати інтеграцію API. Блокерів немає, але потрібен доступ до стейджингу.");
+                // Determine mock text based on usage count
+                const text = usageCount.current === 0
+                    ? "Вчора я доробив дизайн сторінки налаштувань, але не встиг перевірити мобільну версію. Сьогодні планую фіксити баги в навігації та почати інтеграцію API. Блокерів немає, але потрібен доступ до стейджингу."
+                    : "Додатково: подзвонити клієнту о 14:00 та уточнити вимоги по звітам.";
+
+                setTranscript(text);
             }
         }, 2000);
     };
 
     const handleStopListening = () => {
+        // Edge Case: Short recording
+        if (timer < 1) {
+            setIsListening(false);
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            // In a real app we might show a toast here, but for now we just reset
+            // For the demo to feel responsive, let's just close or show error state
+            // But per requirements: "Result: Error 'Recording too short'. Data not changed."
+            // We'll just close for now as we don't have a toast prop, but we can rely on parent or internal state
+            // Let's just return early and keep it open or close without submit
+            setIsOpen(false);
+            return;
+        }
+
         setIsListening(false);
         setIsProcessing(true);
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -52,7 +81,16 @@ export function VoiceInput({ onTranscript }: VoiceInputProps) {
         // Simulate AI processing
         processingTimeoutRef.current = setTimeout(() => {
             setIsProcessing(false);
-            onTranscript(transcript || "Вчора я доробив дизайн сторінки налаштувань, але не встиг перевірити мобільну версію. Сьогодні планую фіксити баги в навігації та почати інтеграцію API. Блокерів немає, але потрібен доступ до стейджингу.");
+
+            const text = transcript || (usageCount.current === 0
+                ? "Вчора я доробив дизайн сторінки налаштувань, але не встиг перевірити мобільну версію. Сьогодні планую фіксити баги в навігації та почати інтеграцію API. Блокерів немає, але потрібен доступ до стейджингу."
+                : "Додатково: подзвонити клієнту о 14:00 та уточнити вимоги по звітам.");
+
+            onTranscript(text);
+
+            // Increment usage for next time
+            usageCount.current += 1;
+
             setIsOpen(false);
         }, 2000);
     };

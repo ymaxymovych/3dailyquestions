@@ -67,8 +67,17 @@ export function parseDailyReport(text: string): Partial<DailyReportState> {
         result.help!.blockers = 'Потрібен доступ до стейджингу';
     }
 
+    // 4. Parse Additional Info (Smart Append Demo)
+    // "Додатково: подзвонити клієнту о 14:00 та уточнити вимоги по звітам."
+    if (lowerText.includes('додатково') || lowerText.includes('additional')) {
+        // Treat as unplanned work or medium task
+        result.yesterday!.unplannedWork = 'Подзвонити клієнту о 14:00 та уточнити вимоги по звітам';
+        // Also add as a medium task for today
+        result.today!.mediumTasks = 'Подзвонити клієнту о 14:00';
+    }
+
     // Fallback if no keywords found (just put everything in summary)
-    if (!result.today!.bigTask && !result.yesterday!.plannedTasks.length) {
+    if (!result.today!.bigTask && !result.yesterday!.plannedTasks?.length && !result.yesterday!.unplannedWork) {
         result.yesterday!.summary = text;
     }
 

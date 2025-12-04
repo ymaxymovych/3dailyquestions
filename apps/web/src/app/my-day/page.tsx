@@ -307,48 +307,111 @@ export default function ThreeBlocksPage() {
     const handleVoiceInput = (transcript: string) => {
         const parsed = parseDailyReport(transcript);
 
-        // Merge parsed data into current state
-        // We need to be careful not to overwrite existing data with empty strings if the parser didn't find anything
-        const newState = { ...reportState };
+        // Save previous state for Undo
+        const previousState = { ...reportState };
 
+        // Smart Merge Logic
+        const newState = { ...reportState };
+        let hasChanges = false;
+
+        // Helper to check for duplicates
+        const isDuplicateTask = (tasks: Task[], title: string) => {
+            return tasks.some(t => t.title.toLowerCase().trim() === title.toLowerCase().trim());
+        };
+
+        // 1. Yesterday: Append Tasks
         if (parsed.yesterday) {
             if (parsed.yesterday.plannedTasks?.length) {
-                newState.yesterday.plannedTasks = [
-                    ...newState.yesterday.plannedTasks,
-                    ...parsed.yesterday.plannedTasks
-                ];
+                const newTasks = parsed.yesterday.plannedTasks.filter(t => !isDuplicateTask(newState.yesterday.plannedTasks, t.title));
+                if (newTasks.length > 0) {
+                    newState.yesterday.plannedTasks = [
+                        ...newState.yesterday.plannedTasks,
+                        ...newTasks
+                    ];
+                    hasChanges = true;
+                }
             }
-            if (parsed.yesterday.summary) newState.yesterday.summary = parsed.yesterday.summary;
-            // ... other fields if needed
+            // Append text fields with newline
+            if (parsed.yesterday.summary && !newState.yesterday.summary.includes(parsed.yesterday.summary)) {
+                newState.yesterday.summary = newState.yesterday.summary
+                    ? `${newState.yesterday.summary}\n${parsed.yesterday.summary}`
+                    : parsed.yesterday.summary;
+                hasChanges = true;
+            }
+            if (parsed.yesterday.unplannedWork && !newState.yesterday.unplannedWork.includes(parsed.yesterday.unplannedWork)) {
+                newState.yesterday.unplannedWork = newState.yesterday.unplannedWork
+                    ? `${newState.yesterday.unplannedWork}\n${parsed.yesterday.unplannedWork}`
+                    : parsed.yesterday.unplannedWork;
+                hasChanges = true;
+            }
         }
 
+        // 2. Today: Smart Merge with Big Task Displacement
         if (parsed.today) {
+            // Big Task Displacement Strategy
             if (parsed.today.bigTask) {
-                newState.today.bigTask = newState.today.bigTask
-                    ? `${newState.today.bigTask} ${parsed.today.bigTask}`
-                    : parsed.today.bigTask;
+                // Check if it's the same task
+                if (newState.today.bigTask !== parsed.today.bigTask) {
+                    if (newState.today.bigTask) {
+                        const oldBigTask = newState.today.bigTask;
+                        const oldBigTaskTime = newState.today.bigTaskTime ? ` (${newState.today.bigTaskTime})` : '';
+
+                        // Move old big task to medium tasks
+                        const movedTask = `[Moved from Big Task] ${oldBigTask}${oldBigTaskTime}`;
+                        newState.today.mediumTasks = newState.today.mediumTasks
+                            ? `${newState.today.mediumTasks}\n${movedTask}`
+                            : movedTask;
+                    }
+
+                    newState.today.bigTask = parsed.today.bigTask;
+                    newState.today.bigTaskTime = parsed.today.bigTaskTime || '';
+                    hasChanges = true;
+                }
             }
-            if (parsed.today.bigTaskTime) newState.today.bigTaskTime = parsed.today.bigTaskTime; // Time usually replaces
-            if (parsed.today.mediumTasks) {
+
+            // Append Medium Tasks
+            if (parsed.today.mediumTasks && !newState.today.mediumTasks?.includes(parsed.today.mediumTasks)) {
                 newState.today.mediumTasks = newState.today.mediumTasks
-                    ? `${newState.today.mediumTasks} ${parsed.today.mediumTasks}`
+                    ? `${newState.today.mediumTasks}\n${parsed.today.mediumTasks}`
                     : parsed.today.mediumTasks;
+                hasChanges = true;
             }
         }
 
+        // 3. Help: Append Blockers
         if (parsed.help) {
-            if (parsed.help.blockers) {
+            if (parsed.help.blockers && !newState.help.blockers.includes(parsed.help.blockers)) {
                 newState.help.blockers = newState.help.blockers
-                    ? `${newState.help.blockers} ${parsed.help.blockers}`
+                    ? `${newState.help.blockers}\n${parsed.help.blockers}`
                     : parsed.help.blockers;
+                hasChanges = true;
             }
+        }
+
+        if (!hasChanges) {
+            toast.info('Нової інформації не знайдено або вона вже існує.');
+            return;
         }
 
         updateState(newState);
-        toast.success('Звіт заповнено з голосу!');
+
+        // Custom Toast based on action with UNDO
+        const toastMessage = (parsed.yesterday?.unplannedWork || parsed.today?.mediumTasks?.includes('Додатково'))
+            ? 'Звіт доповнено новою інформацією!'
+            : 'Звіт заповнено з голосу!';
+
+        toast.success(toastMessage, {
+            action: {
+                label: 'Undo',
+                onClick: () => {
+                    setReportState(previousState);
+                    updateState(previousState);
+                    toast.info('Зміни скасовано');
+                }
+            },
+            duration: 5000,
+        });
     };
-
-
 
     return (
         <AppLayout>
@@ -540,7 +603,7 @@ export default function ThreeBlocksPage() {
                 {/* Voice Input FAB */}
                 <VoiceInput onTranscript={handleVoiceInput} />
             </div>
-        </AppLayout>
+        </AppLayout >
     );
 }
 

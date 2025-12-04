@@ -75,5 +75,25 @@ npm run lint
     - Verify "Team Step" shows "Join Team" options.
 
 3.  **Manager Flow**:
-    - Log in as a Manager.
     - Verify "Team Step" shows "Create Team" options.
+
+### 4. Voice Input "Magic Draft" Verification
+1.  **Initial Fill**:
+    - Go to `/my-day`.
+    - Click the Microphone FAB (bottom-right).
+    - Click "Start Listening" -> Wait 2s -> Click "Finish".
+    - **Verify**: Form is filled with "Yesterday..." and "Today..." data.
+2.  **Smart Append**:
+    - Click Microphone FAB again.
+    - Click "Start Listening" -> Wait 2s -> Click "Finish".
+    - **Verify**:
+        - New text appended to "Summary" or "Unplanned" (check for "Додатково...").
+        - New task added to "Medium Tasks".
+        - **Toast**: Shows "Undo" button.
+3.  **Undo**:
+    - Immediately click "Undo" on the toast.
+    - **Verify**: The appended text/tasks disappear.
+4.  **Big Task Displacement**:
+    - Ensure a Big Task exists.
+    - Use Voice Input (First Run) which sets a Big Task.
+    - **Verify**: The *old* Big Task moves to "Medium Tasks" with `[Moved from Big Task]` prefix.
