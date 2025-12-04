@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Key, Brain, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Key, Brain, Sparkles, AlertTriangle, CheckCircle2, Mic } from 'lucide-react';
 
 type LLMProvider = 'openai' | 'openrouter' | 'huggingface' | 'rule-based';
 
@@ -67,6 +67,40 @@ const PROVIDER_INFO = {
     },
 };
 
+type STTProvider = 'openai-whisper' | 'google-stt' | 'browser-native';
+
+interface STTConfig {
+    provider: STTProvider;
+    apiKey?: string;
+}
+
+const STT_PROVIDER_INFO = {
+    'openai-whisper': {
+        name: 'OpenAI Whisper',
+        description: 'Best accuracy, very cheap ($0.006/min). Recommended.',
+        icon: '🎙️',
+        requiresKey: true,
+        cost: '$0.006 / min',
+        recommended: true,
+    },
+    'google-stt': {
+        name: 'Google Cloud STT',
+        description: 'Good accuracy, supports many languages.',
+        icon: '🗣️',
+        requiresKey: true,
+        cost: '$0.024 / min',
+        recommended: false,
+    },
+    'browser-native': {
+        name: 'Browser Native',
+        description: 'Free, built-in. Quality varies by browser.',
+        icon: '🌐',
+        requiresKey: false,
+        cost: 'Free',
+        recommended: false,
+    },
+};
+
 export default function AIConfigPage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
@@ -78,6 +112,9 @@ export default function AIConfigPage() {
     const [model, setModel] = useState('');
     const [testResult, setTestResult] = useState<string | null>(null);
 
+    const [sttProvider, setSttProvider] = useState<STTProvider>('openai-whisper');
+    const [sttApiKey, setSttApiKey] = useState('');
+
     useEffect(() => {
         fetchConfig();
     }, []);
@@ -88,11 +125,16 @@ export default function AIConfigPage() {
             if (response.ok) {
                 const org = await response.json();
                 const llmConfig = org.aiPolicy?.llm as LLMConfig | undefined;
+                const sttConfig = org.aiPolicy?.stt as STTConfig | undefined;
 
                 if (llmConfig) {
                     setProvider(llmConfig.provider || 'rule-based');
                     setApiKey(llmConfig.apiKey || '');
                     setModel(llmConfig.model || '');
+                }
+                if (sttConfig) {
+                    setSttProvider(sttConfig.provider || 'openai-whisper');
+                    setSttApiKey(sttConfig.apiKey || '');
                 }
             }
         } catch (error) {
@@ -115,6 +157,10 @@ export default function AIConfigPage() {
                             apiKey: apiKey || undefined,
                             model: model || undefined,
                         },
+                        stt: {
+                            provider: sttProvider,
+                            apiKey: sttApiKey || undefined,
+                        }
                     },
                 }),
             });
@@ -122,7 +168,7 @@ export default function AIConfigPage() {
             if (response.ok) {
                 toast({
                     title: 'Success',
-                    description: 'LLM configuration saved successfully',
+                    description: 'AI configuration saved successfully',
                 });
             } else {
                 throw new Error('Failed to save');
@@ -168,6 +214,7 @@ export default function AIConfigPage() {
     };
 
     const currentProviderInfo = PROVIDER_INFO[provider];
+    const currentSTTInfo = STT_PROVIDER_INFO[sttProvider];
     const availableModels = currentProviderInfo.models;
 
     if (loading) {
@@ -179,161 +226,207 @@ export default function AIConfigPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                     <Brain className="h-8 w-8" />
                     AI Provider Configuration
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                    Configure LLM provider for AI features (Mentor, Digest, Task Structurizer)
+                    Configure LLM and Voice Recognition providers for AI features.
                 </p>
             </div>
 
-            {/* Provider Selection */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Select AI Provider</CardTitle>
-                    <CardDescription>
-                        Choose between rule-based logic or LLM-powered AI
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {(Object.keys(PROVIDER_INFO) as LLMProvider[]).map((providerKey) => {
-                            const info = PROVIDER_INFO[providerKey];
-                            return (
-                                <div
-                                    key={providerKey}
-                                    onClick={() => setProvider(providerKey)}
-                                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${provider === providerKey
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                                            : 'border-slate-200 dark:border-slate-700'
-                                        }`}
-                                >
-                                    <div className="text-3xl mb-2">{info.icon}</div>
-                                    <h3 className="font-semibold mb-1">{info.name}</h3>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                        {info.description}
-                                    </p>
-                                    <Badge variant="secondary" className="text-xs">
-                                        {info.limit}
-                                    </Badge>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </CardContent>
-            </Card>
+            {/* LLM Configuration Section */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                    <Brain className="h-5 w-5 text-blue-500" />
+                    <h2 className="text-xl font-semibold">LLM (Text Generation)</h2>
+                </div>
 
-            {/* API Key Configuration */}
-            {currentProviderInfo.requiresKey && (
+                {/* Provider Selection */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Key className="h-5 w-5" />
-                            API Key for {currentProviderInfo.name}
-                        </CardTitle>
+                        <CardTitle>Select AI Provider</CardTitle>
                         <CardDescription>
-                            Your API key is stored securely and only used for AI requests
+                            Choose between rule-based logic or LLM-powered AI
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="apiKey">API Key</Label>
-                            <Input
-                                id="apiKey"
-                                type="password"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                placeholder={`Enter your ${currentProviderInfo.name} API key`}
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {(Object.keys(PROVIDER_INFO) as LLMProvider[]).map((providerKey) => {
+                                const info = PROVIDER_INFO[providerKey];
+                                return (
+                                    <div
+                                        key={providerKey}
+                                        onClick={() => setProvider(providerKey)}
+                                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${provider === providerKey
+                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                            : 'border-slate-200 dark:border-slate-700'
+                                            }`}
+                                    >
+                                        <div className="text-3xl mb-2">{info.icon}</div>
+                                        <h3 className="font-semibold mb-1">{info.name}</h3>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                            {info.description}
+                                        </p>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {info.limit}
+                                        </Badge>
+                                    </div>
+                                );
+                            })}
                         </div>
-
-                        {availableModels.length > 0 && (
-                            <div className="grid gap-2">
-                                <Label htmlFor="model">Model</Label>
-                                <Select value={model} onValueChange={setModel}>
-                                    <SelectTrigger id="model">
-                                        <SelectValue placeholder="Select a model..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableModels.map((m) => (
-                                            <SelectItem key={m} value={m}>
-                                                {m}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground">
-                                    💡 Tip: Use cheapest models for testing (e.g., claude-3-haiku, mistral-7b)
-                                </p>
-                            </div>
-                        )}
-
-                        <Button
-                            onClick={handleTest}
-                            disabled={testing || !apiKey}
-                            variant="outline"
-                            className="w-full"
-                        >
-                            {testing ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Testing...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="h-4 w-4 mr-2" />
-                                    Test Connection
-                                </>
-                            )}
-                        </Button>
-
-                        {testResult && (
-                            <Alert className={testResult.startsWith('✅') ? 'border-green-500' : 'border-red-500'}>
-                                <AlertDescription className="text-sm">
-                                    {testResult}
-                                </AlertDescription>
-                            </Alert>
-                        )}
                     </CardContent>
                 </Card>
-            )}
 
-            {/* Current Configuration Summary */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Current Configuration</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Provider:</span>
-                            <span className="font-medium">{currentProviderInfo.name}</span>
-                        </div>
-                        {model && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Model:</span>
-                                <span className="font-medium">{model}</span>
+                {/* API Key Configuration */}
+                {currentProviderInfo.requiresKey && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Key className="h-5 w-5" />
+                                API Key for {currentProviderInfo.name}
+                            </CardTitle>
+                            <CardDescription>
+                                Your API key is stored securely and only used for AI requests
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="apiKey">API Key</Label>
+                                <Input
+                                    id="apiKey"
+                                    type="password"
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    placeholder={`Enter your ${currentProviderInfo.name} API key`}
+                                />
                             </div>
-                        )}
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">API Key:</span>
-                            <span className="font-medium">
-                                {apiKey ? '••••••••' + apiKey.slice(-4) : 'Not set'}
-                            </span>
+
+                            {availableModels.length > 0 && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="model">Model</Label>
+                                    <Select value={model} onValueChange={setModel}>
+                                        <SelectTrigger id="model">
+                                            <SelectValue placeholder="Select a model..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableModels.map((m) => (
+                                                <SelectItem key={m} value={m}>
+                                                    {m}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        💡 Tip: Use cheapest models for testing (e.g., claude-3-haiku, mistral-7b)
+                                    </p>
+                                </div>
+                            )}
+
+                            <Button
+                                onClick={handleTest}
+                                disabled={testing || !apiKey}
+                                variant="outline"
+                                className="w-full"
+                            >
+                                {testing ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Testing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="h-4 w-4 mr-2" />
+                                        Test Connection
+                                    </>
+                                )}
+                            </Button>
+
+                            {testResult && (
+                                <Alert className={testResult.startsWith('✅') ? 'border-green-500' : 'border-red-500'}>
+                                    <AlertDescription className="text-sm">
+                                        {testResult}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+
+            {/* Voice Recognition Section */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                    <Mic className="h-5 w-5 text-purple-500" />
+                    <h2 className="text-xl font-semibold">Voice Recognition (Speech-to-Text)</h2>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Select Voice Provider</CardTitle>
+                        <CardDescription>
+                            Service used to transcribe voice notes to text
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {(Object.keys(STT_PROVIDER_INFO) as STTProvider[]).map((providerKey) => {
+                                const info = STT_PROVIDER_INFO[providerKey];
+                                return (
+                                    <div
+                                        key={providerKey}
+                                        onClick={() => setSttProvider(providerKey)}
+                                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${sttProvider === providerKey
+                                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+                                            : 'border-slate-200 dark:border-slate-700'
+                                            }`}
+                                    >
+                                        <div className="text-3xl mb-2">{info.icon}</div>
+                                        <h3 className="font-semibold mb-1">{info.name}</h3>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                            {info.description}
+                                        </p>
+                                        <Badge variant={info.recommended ? "default" : "secondary"} className="text-xs">
+                                            {info.cost}
+                                        </Badge>
+                                    </div>
+                                );
+                            })}
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Daily Limit:</span>
-                            <span className="font-medium">{currentProviderInfo.limit}</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+
+                {currentSTTInfo.requiresKey && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Key className="h-5 w-5" />
+                                API Key for {currentSTTInfo.name}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-2">
+                                <Label htmlFor="sttApiKey">API Key</Label>
+                                <Input
+                                    id="sttApiKey"
+                                    type="password"
+                                    value={sttApiKey}
+                                    onChange={(e) => setSttApiKey(e.target.value)}
+                                    placeholder={`Enter your ${currentSTTInfo.name} API key`}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Usually starts with <code>sk-...</code>
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
 
             {/* Save Button */}
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" onClick={fetchConfig}>
                     Reset
                 </Button>

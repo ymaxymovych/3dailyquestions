@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { CalendarDays, Save, Plug, ChevronLeft, ChevronRight, Check, Loader2, Wand2, Menu } from 'lucide-react';
+import { CalendarDays, Save, Moon, Sun, Menu, ChevronRight, Plug, ChevronLeft, Check, Loader2, Wand2 } from 'lucide-react';
 import { YesterdayCard } from './YesterdayCard';
 import { TodayCard } from './TodayCard';
 import { HelpCard } from './HelpCard';
 import { ContextPanel } from './ContextPanel';
-import { VoiceInput } from './VoiceInput';
+import { VoiceInput } from './VoiceInput'; // Import
 import { INITIAL_STATE } from '../constants';
 import { DailyReportState, TaskStatus } from '../types';
 
@@ -34,6 +34,7 @@ export const MyReportPage = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reportState));
   }, [reportState]);
 
+  // Clear toast after 3s
   useEffect(() => {
     if (aiToast) {
         const timer = setTimeout(() => setAiToast(null), 4000);
@@ -49,71 +50,18 @@ export const MyReportPage = () => {
     }, 800);
   };
 
-  // --- SMART MERGE LOGIC ---
-  const smartMergeReports = (current: DailyReportState, incoming: Partial<DailyReportState>): DailyReportState => {
-    const newState = { ...current };
-
-    // Helper to append text with a newline if it exists
-    const appendText = (oldVal: string | undefined, newVal: string | undefined) => {
-        if (!newVal) return oldVal || '';
-        if (!oldVal) return newVal;
-        return `${oldVal}\n${newVal}`; // Append with newline
-    };
-
-    // 1. Merge Yesterday
-    if (incoming.yesterday) {
-        newState.yesterday = {
-            ...current.yesterday,
-            // Append tasks to the list
-            plannedTasks: incoming.yesterday.plannedTasks 
-                ? [...current.yesterday.plannedTasks, ...incoming.yesterday.plannedTasks]
-                : current.yesterday.plannedTasks,
-            // Append text fields
-            unplannedWork: appendText(current.yesterday.unplannedWork, incoming.yesterday.unplannedWork),
-            smallTasks: appendText(current.yesterday.smallTasks, incoming.yesterday.smallTasks),
-            summary: appendText(current.yesterday.summary, incoming.yesterday.summary),
-            metrics: appendText(current.yesterday.metrics, incoming.yesterday.metrics),
-        };
-    }
-
-    // 2. Merge Today
-    if (incoming.today) {
-        newState.today = {
-            ...current.today,
-            // For Big Task, we generally replace if the user explicitly dictated a new main focus,
-            // but for this "Smart Append" demo, if there is already a big task, we might append to medium tasks instead
-            // OR simply replace if the AI detected a strong intent. 
-            // Let's assume replacement for Big Task if incoming has one, as usually there is only one Big Task.
-            bigTask: incoming.today.bigTask || current.today.bigTask,
-            bigTaskTime: incoming.today.bigTaskTime || current.today.bigTaskTime,
-            isBigTaskBooked: incoming.today.isBigTaskBooked ?? current.today.isBigTaskBooked,
-            
-            // Text areas append
-            mediumTasks: appendText(current.today.mediumTasks, incoming.today.mediumTasks),
-            smallTasks: appendText(current.today.smallTasks, incoming.today.smallTasks),
-            expectedMetrics: appendText(current.today.expectedMetrics, incoming.today.expectedMetrics),
-        };
-    }
-
-    // 3. Merge Help
-    if (incoming.help) {
-        newState.help = {
-            blockers: appendText(current.help.blockers, incoming.help.blockers)
-        };
-    }
-
-    return newState;
-  };
-
   const handleVoiceReportGenerated = (partialState: Partial<DailyReportState>) => {
-    setReportState(prev => {
-        const merged = smartMergeReports(prev, partialState);
-        return merged;
-    });
-    
-    // Different message if we appended vs created
-    const isUpdate = reportState.yesterday.unplannedWork || reportState.today.bigTask;
-    setAiToast(isUpdate ? "Report updated with new info!" : "Report filled from voice!");
+    // Merge the AI generated state with current state
+    // In a real app, we might want to confirm overwrite, but for "Magic Draft" we usually fill.
+    setReportState(prev => ({
+        ...prev,
+        ...partialState,
+        // Deep merge for nested objects if necessary, but here structure is flat enough per section
+        yesterday: { ...prev.yesterday, ...partialState.yesterday },
+        today: { ...prev.today, ...partialState.today },
+        help: { ...prev.help, ...partialState.help }
+    }));
+    setAiToast("Report filled from voice! Please review.");
   };
 
   const handleTaskStatusChange = (id: string, status: TaskStatus) => {
@@ -240,7 +188,7 @@ export const MyReportPage = () => {
           </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-24"> {/* Added padding bottom for FAB */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
            
            <div className="lg:col-span-8 space-y-8">

@@ -25,3 +25,12 @@
 - [ ] **User Role Detection**: Improve role detection logic in User Wizard (currently uses simple array includes).
 - [ ] **TeamStep Department Selection**: Add department selection if user doesn't have departmentId assigned yet.
 - [ ] **Wizard Animations**: Add smooth transitions between wizard steps.
+
+## 🎙️ Voice Input Enhancements (Future)
+- [ ] **Real STT Integration**: Replace mock with actual OpenAI Whisper API
+- [ ] **Voice Input History**: Add ability to view/undo previous voice entries
+- [ ] **Multi-language Support**: Enable voice recognition in Ukrainian, English, etc.
+- [ ] **Voice Commands**: Add voice shortcuts like "Save report", "Clear all"
+- [ ] **Confidence Indicators**: Show AI parsing confidence scores for each field
+- [ ] **Voice Memo Attachment**: Allow users to attach raw audio file to report
+

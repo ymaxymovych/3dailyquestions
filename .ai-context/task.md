@@ -1,79 +1,53 @@
-# Onboarding Strategy Implementation: "Divide and Adapt"
+# Voice Input "Magic Draft" Implementation
 
 ## 📌 Current Focus (Short-Term Memory)
-*Last Updated: 2025-12-04T04:54:00+02:00*
+*Last Updated: 2025-12-04T05:53:00+02:00*
 
-**Immediate Goal**: Manual testing of the implemented wizards flows (Admin, Manager, Employee).
+**Immediate Goal**: Manual Testing of Voice Input Feature.
 
 **Active Context** (files relevant to current task):
-- `apps/web/src/app/setup-wizard/organization/page.tsx`
-- `apps/web/src/app/setup-wizard/user/page.tsx`
-- `apps/web/src/app/setup-wizard/page.tsx`
-- `apps/web/src/components/wizard/user/`
+- `apps/web/src/app/my-day/page.tsx`
+- `apps/web/src/components/my-day/VoiceInput.tsx`
+- `apps/web/src/lib/mockAIParser.ts`
+- `apps/web/src/app/settings/ai-config/page.tsx`
 
-**Strategy**: "Divide and Adapt" ✅ **IMPLEMENTED**
-1.  **Organization Wizard**: Company setup (Admin only) - ✅ Done
-2.  **User Wizard**: Adaptive for everyone - ✅ Done
-    -   **Employee**: Join Team
-    -   **Manager**: Create/Manage Team
-    -   **Admin**: Personal profile setup
+## Completed Tasks
+- [x] Implement Voice Input "Magic Draft" for Daily Report <!-- id: 4 -->
+    - [x] Create `VoiceInput` component (FAB + Modal) <!-- id: 5 -->
+    - [x] Create `mockAIParser` utility <!-- id: 6 -->
+    - [x] Integrate into `MyReportPage` <!-- id: 7 -->
+    - [x] Refactor UI to match Dark Theme Design (Red Mic, Timer, Waveform) <!-- id: 9 -->
+    - [x] Update Logic to Append Text (not Overwrite) <!-- id: 10 -->
+- [x] Add Voice Recognition Settings <!-- id: 12 -->
+    - [x] Update `AIConfigPage` with STT Provider options <!-- id: 13 -->
+    - [x] Set OpenAI Whisper as default <!-- id: 14 -->
 
-## Phase 1: Plan & Schema
-- [x] Analyze Database Schema for Roles/Teams
-- [x] Define "Divide and Adapt" Strategy
-- [x] Update `implementation_plan.md` with detailed flows
-- [x] Verify Prisma Schema matches requirements (User fields)
-
-## Phase 2: Organization Wizard (Refinement)
-- [x] Rename/Move existing wizard to `/setup-wizard/organization`
-- [x] Ensure it ONLY handles Org data (Departments, Schedule, AI)
-- [x] Remove Personal steps (Job Role) from Org Wizard
-- [x] Update API `api/setup/organization/status`
-- [x] Create API routes for settings and AI policy
-
-## Phase 3: User Wizard (New & Adaptive)
-- [x] Create `/setup-wizard/user` structure
-- [x] Implement **Welcome & Profile** step
-- [x] Implement **Adaptive Team Step**:
-    - [x] Logic: If Manager -> Show "Create Team" / "Manage Team"
-    - [x] Logic: If Employee -> Show "Join Team" (Select from list)
-- [x] Implement **Preferences** step
-- [x] Update API `api/setup/user/status`
-- [x] Create all API routes (teams, profile, preferences)
-
-## Phase 4: Routing & Gatekeeper
-- [x] Update `middleware` or `AuthContext` to handle redirects
-    - *Implemented via Smart Redirector page `/setup-wizard/page.tsx`*
-- [x] Logic: First User -> Org Wizard -> User Wizard
-- [x] Logic: Invited User -> User Wizard
-- [x] Logic: Existing User (new feature) -> Dashboard (or optional wizard)
-
-## Phase 5: Verification
-- [x] Run Build & Lint Checks ✅ **Build successful!**
-- [ ] Test Admin Flow (New Company)
-- [ ] Test Manager Flow (Head/Team Lead)
-- [ ] Test Employee Flow (Join existing)
+## Pending Tasks
+- [ ] Verify functionality (Manual Test) <!-- id: 8 -->
+- [ ] **Future**: Integrate Real AI Transcription (Whisper/Browser API) <!-- id: 11 -->
 
 ## Recent Decisions / Notes
 
-### 2025-12-04: Complete Implementation & Build Fixes
-- ✅ Successfully implemented Organization Wizard (6 steps)
-- ✅ Successfully implemented User Wizard with adaptive logic (5 steps)
-- ✅ Created all necessary API routes for wizards
-- ✅ Fixed build errors:
-  - Updated `User` interface in AuthContext (added `departmentId`, `image`, `profile`)
-  - Fixed `/api/user/preferences` to use `workSchedule` JSON field
-  - Added Suspense boundaries to settings pages using `useSearchParams()`
-- 🎯 **Build Status**: Passing (all TypeScript errors resolved)
+### 2025-12-04: Voice Input Implementation Complete
+- ✅ Created `VoiceInput.tsx` component with FAB and dark theme modal
+- ✅ Implemented mock voice recognition with timer and waveform animation
+- ✅ Created `mockAIParser.ts` for keyword-based transcript parsing
+- ✅ Integrated voice input into Daily Report page with "Magic Draft" flow
+- ✅ Updated logic to APPEND text instead of OVERWRITE (preserves context)
+- ✅ Added Voice Recognition (STT) settings to AI Config page:
+  - OpenAI Whisper (Default, $0.006/min)
+  - Google Cloud STT ($0.024/min)
+  - Browser Native (Free)
+- 🎨 **Design**: Dark/Light theme adaptive UI with red microphone accent
+- 🎯 **Flow**: Click FAB → Speak → Finish → AI Parses → Review → Save
 
 ### Next Steps
-1. Manual testing of wizard flows
-2. Test edge cases (skip, navigation, errors)
-3. Consider adding middleware for automatic wizard redirects
-4. Possibly implement invite email system for new users
+1. Manual testing of voice input flow
+2. Verify AI parsing accuracy with different inputs
+3. Test theme switching (Dark/Light mode)
+4. Consider integrating real STT API (OpenAI Whisper recommended)
 
 ## Known Issues / TODOs
-- [ ] User role detection logic in User Wizard is simplified (uses `roles` array)
-- [ ] Need to implement proper middleware for wizard gatekeeper logic
-- [ ] API routes created but not all backend DTO validation implemented
-- [ ] TeamStep needs department selection if user doesn't have departmentId yet
+- [ ] Voice input currently uses mock simulation (not real speech recognition)
+- [ ] Need to implement real STT API integration using configured provider
+- [ ] Consider adding voice input history/undo functionality

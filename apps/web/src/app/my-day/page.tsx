@@ -21,6 +21,8 @@ import { ContextPanel } from '@/components/my-day/ContextPanel';
 import { AIMentorCard } from '@/components/my-day/AIMentorCard';
 import { DailyReportState, Task, TaskStatus } from '@/components/my-day/types';
 import { INITIAL_STATE } from '@/components/my-day/constants';
+import { VoiceInput } from '@/components/my-day/VoiceInput';
+import { parseDailyReport } from '@/lib/mockAIParser';
 
 // Types for API response
 interface ThreeBlocksData {
@@ -302,6 +304,52 @@ export default function ThreeBlocksPage() {
         setDate(prev => addDays(prev, days));
     };
 
+    const handleVoiceInput = (transcript: string) => {
+        const parsed = parseDailyReport(transcript);
+
+        // Merge parsed data into current state
+        // We need to be careful not to overwrite existing data with empty strings if the parser didn't find anything
+        const newState = { ...reportState };
+
+        if (parsed.yesterday) {
+            if (parsed.yesterday.plannedTasks?.length) {
+                newState.yesterday.plannedTasks = [
+                    ...newState.yesterday.plannedTasks,
+                    ...parsed.yesterday.plannedTasks
+                ];
+            }
+            if (parsed.yesterday.summary) newState.yesterday.summary = parsed.yesterday.summary;
+            // ... other fields if needed
+        }
+
+        if (parsed.today) {
+            if (parsed.today.bigTask) {
+                newState.today.bigTask = newState.today.bigTask
+                    ? `${newState.today.bigTask} ${parsed.today.bigTask}`
+                    : parsed.today.bigTask;
+            }
+            if (parsed.today.bigTaskTime) newState.today.bigTaskTime = parsed.today.bigTaskTime; // Time usually replaces
+            if (parsed.today.mediumTasks) {
+                newState.today.mediumTasks = newState.today.mediumTasks
+                    ? `${newState.today.mediumTasks} ${parsed.today.mediumTasks}`
+                    : parsed.today.mediumTasks;
+            }
+        }
+
+        if (parsed.help) {
+            if (parsed.help.blockers) {
+                newState.help.blockers = newState.help.blockers
+                    ? `${newState.help.blockers} ${parsed.help.blockers}`
+                    : parsed.help.blockers;
+            }
+        }
+
+        updateState(newState);
+        toast.success('Звіт заповнено з голосу!');
+    };
+
+
+
     return (
         <AppLayout>
             <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900">
@@ -488,7 +536,12 @@ export default function ThreeBlocksPage() {
                         </div>
                     </main>
                 </div>
+
+                {/* Voice Input FAB */}
+                <VoiceInput onTranscript={handleVoiceInput} />
             </div>
         </AppLayout>
     );
 }
+
+

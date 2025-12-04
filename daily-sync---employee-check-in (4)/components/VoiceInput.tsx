@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, X, Loader2, Sparkles, StopCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mic, X, Loader2, Sparkles, StopCircle } from 'lucide-react';
 import { DailyReportState } from '../types';
 
 interface VoiceInputProps {
@@ -8,33 +8,11 @@ interface VoiceInputProps {
 }
 
 // --- MOCK AI PARSER ---
-// Simulates parsing based on usage count to demonstrate "Filling" vs "Appending"
-const parseVoiceToState = (text: string, attempt: number): Partial<DailyReportState> => {
+// In a real app, this would be an API call to OpenAI Whisper + GPT-4
+const parseVoiceToState = (text: string): Partial<DailyReportState> => {
   console.log("Parsing voice input:", text);
   
-  if (attempt > 1) {
-      // Scenario: Supplementing info
-      return {
-          yesterday: {
-              unplannedWork: 'Додатково: Дзвінок з юристами (30 хв)',
-              plannedTasks: [],
-              smallTasks: '',
-              summary: '',
-              metrics: ''
-          },
-          today: {
-              mediumTasks: 'Узгодити договір (1 год)',
-              smallTasks: '',
-              expectedMetrics: '',
-              bigTask: '',
-              bigTaskTime: '',
-              isBigTaskBooked: false
-          },
-          help: { blockers: '' }
-      };
-  }
-
-  // Scenario: First fill
+  // Simulated parsing logic based on keywords
   return {
     yesterday: {
       plannedTasks: [
@@ -66,10 +44,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onReportGenerated }) => 
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [recordingTime, setRecordingTime] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Track usage to simulate different AI responses
-  const usageCount = useRef(0);
 
   // Timer for recording UI
   useEffect(() => {
@@ -93,8 +67,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onReportGenerated }) => 
   const handleStart = () => {
     setIsOpen(true);
     setIsRecording(true);
-    setError(null);
-    usageCount.current += 1;
+    // Simulate recording start
   };
 
   const handleStop = () => {
@@ -103,35 +76,24 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onReportGenerated }) => 
 
     // Simulate AI Latency
     setTimeout(() => {
-        // Edge Case: Very short input
-        if (recordingTime < 1) { // Simulating noise or accidental click
-             setError("Запис занадто короткий. Спробуйте ще раз.");
-             setIsProcessing(false);
-             return;
-        }
-
-        // Mock transcript based on usage
-        const mockTranscript = usageCount.current > 1 
-            ? "А, забув додати. Вчора ще говорив з юристами пів години. Сьогодні треба узгодити договір."
-            : "Вчора я закінчив дизайн інтерфейсу і мав дзвінок з клієнтом. Також допоміг джуну. Сьогодні план - мобільна адаптивність.";
-        
-        setTranscript(mockTranscript);
+      // Mock transcript that "happened"
+      const mockTranscript = "Вчора я закінчив дизайн інтерфейсу і мав дзвінок з клієнтом, але він запізнився. Також допоміг джуну з багом. Сьогодні план - зробити мобільну адаптивність, це головне завдання до обіду. Також пофікшу меню і футер. Блокер - досі чекаю доступ до репозиторію.";
+      setTranscript(mockTranscript);
       
-        setTimeout(() => {
-            const parsedState = parseVoiceToState(mockTranscript, usageCount.current);
-            onReportGenerated(parsedState);
-            setIsProcessing(false);
-            setIsOpen(false);
-            setTranscript('');
-        }, 1500); 
-    }, 1000); 
+      setTimeout(() => {
+        const parsedState = parseVoiceToState(mockTranscript);
+        onReportGenerated(parsedState);
+        setIsProcessing(false);
+        setIsOpen(false);
+        setTranscript('');
+      }, 1500); // Parsing time
+    }, 1000); // Finalizing audio time
   };
 
   const handleClose = () => {
     if (isProcessing) return;
     setIsOpen(false);
     setIsRecording(false);
-    setError(null);
   };
 
   if (!isOpen) {
@@ -178,22 +140,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onReportGenerated }) => 
                  <p className="text-sm text-slate-500">Structuring your report</p>
                </div>
             </div>
-          ) : error ? (
-             <div className="space-y-4">
-                <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
-                    <AlertCircle className="w-8 h-8 text-red-500" />
-                </div>
-                <div>
-                    <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Помилка</h4>
-                    <p className="text-sm text-red-500 font-medium">{error}</p>
-                </div>
-                <button 
-                    onClick={() => { setError(null); setIsRecording(true); }}
-                    className="text-sm text-blue-500 hover:underline"
-                >
-                    Спробувати ще раз
-                </button>
-             </div>
           ) : (
             <div className="space-y-6 w-full">
                <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
@@ -205,14 +151,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onReportGenerated }) => 
                </div>
                
                <div>
-                  <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                      {usageCount.current > 1 ? "Слухаю доповнення..." : "Слухаю звіт..."}
-                  </h4>
+                  <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Listening...</h4>
                   <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    {usageCount.current > 1 
-                        ? "Скажіть, що додати до попереднього."
-                        : "Говоріть вільно про вчорашній день, плани та проблеми."
-                    }
+                    Говоріть вільно про вчорашній день, плани та проблеми.
                   </p>
                </div>
 
@@ -231,7 +172,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onReportGenerated }) => 
         </div>
 
         {/* Footer Actions */}
-        {!isProcessing && !error && (
+        {!isProcessing && (
            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex justify-center">
               <button 
                 onClick={handleStop}

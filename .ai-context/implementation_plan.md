@@ -1,92 +1,51 @@
-# Onboarding Strategy: "Divide and Adapt"
+# Voice Input "Magic Draft" Implementation Plan
 
-## Проблема
-Поточний підхід змішує налаштування компанії та користувача. Потрібно чітко розділити ці процеси та адаптувати їх під роль користувача (Працівник vs Керівник).
+## Goal
+Implement a voice input feature for the "My Day" (Daily Report) page that allows users to dictate their report. The system will simulate an AI parsing the voice input to pre-fill the report form.
 
-## Стратегія: "Divide and Adapt"
+## User Review Required
+> [!NOTE]
+> This implementation uses a **Mock AI Parser** as requested. It will not actually call an external LLM API yet, but will simulate the experience using keyword matching and hardcoded logic.
 
-Ми розділяємо процес на два незалежних візарди:
+## Proposed Changes
 
-### 1. Organization Wizard (`/setup-wizard/organization`)
-**Тільки для Адміна/Власника** при створенні нової компанії.
-**Мета:** Створити "скелет" організації.
+### Frontend Components
 
-**Кроки:**
-1.  **Welcome & Vision**: Вітання, пояснення цінності.
-2.  **Company Profile**: Назва, індустрія, домен.
-3.  **Structure Setup**: Створення Департаментів (Sales, Marketing, Engineering...).
-4.  **Work Schedule**: Глобальний графік роботи та часовий пояс.
-5.  **AI Policy**: Налаштування поведінки AI.
-6.  **Complete**: Перехід до User Wizard.
+#### [NEW] [VoiceInput.tsx](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/apps/web/src/components/my-day/VoiceInput.tsx)
+- **UI**: Floating Action Button (FAB) with a Microphone icon in the bottom-right corner.
+- **Interaction**:
+  - Click opens a modal/overlay.
+  - Shows a "Listening" state with a CSS wave animation.
+  - Shows a "Processing" state with a "Magic Sparkles" animation.
+  - Returns the simulated transcribed text to the parent component.
 
-### 2. User Wizard (`/setup-wizard/user`)
-**Для ВСІХ користувачів** (включаючи Адміна після Org Wizard).
-**Мета:** Персональне налаштування та інтеграція в команду.
-**Адаптивність:** Кроки змінюються залежно від ролі.
+#### [NEW] [mockAIParser.ts](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/apps/web/src/lib/mockAIParser.ts)
+- **Function**: `parseDailyReport(text: string): Partial<DailyReportState>`
+- **Logic**:
+  - Takes raw text input.
+  - Uses simple keyword matching (e.g., "yesterday", "today", "blocker", "help") to map content to specific fields in the `DailyReportState`.
+  - Returns a partial state object to be merged with the current form state.
 
-**Кроки:**
-1.  **Welcome**: Персональне вітання.
-2.  **Profile Confirmation**: Фото, Ім'я, Bio.
-3.  **Role & Team (ADAPTIVE)**:
-    *   **Сценарій A: Працівник (Employee)**
-        *   Вибір Департаменту (якщо не задано).
-        *   **Join Team**: Вибір зі списку існуючих команд або "No Team".
-        *   Вибір Ролі (Role Archetype).
-    *   **Сценарій B: Керівник (Manager/Head)**
-        *   Вибір Департаменту (яким керує).
-        *   **Create/Manage Team**: Створення своєї команди або підтвердження керівництва існуючою.
-        *   Запрошення учасників (опціонально).
-    *   **Сценарій C: Адмін (Owner)**
-        *   Пропускає вибір команди (або створює свою).
-        *   Налаштування свого "Admin" профілю.
-4.  **Work Preferences**: Сповіщення, робочі години (якщо відрізняються від Org).
-5.  **Quick Tour**: Короткий огляд інтерфейсу.
-
----
-
-## Технічна Реалізація
-
-### 1. Database Schema (Prisma)
-Переконатися, що модель `User` підтримує стан візарда (вже є в схемі, перевірити використання).
-
-```prisma
-model User {
-  // ...
-  userWizardCompleted   Boolean @default(false)
-  userWizardSkipped     Boolean @default(false)
-  userCurrentStep       Int     @default(0)
-  
-  // Role & Team relations
-  teamId          String?
-  team            Team?         @relation(fields: [teamId], references: [id])
-  // ...
-}
-```
-
-### 2. Routing Logic (Middleware/Auth)
-*   **New Company**: Register -> Org Wizard -> User Wizard -> Dashboard.
-*   **Invited User**: Register (via Invite) -> User Wizard -> Dashboard.
-*   **Existing User**: Login -> Check `userWizardCompleted` -> Redirect if needed.
-
-### 3. Components Structure
-*   `apps/web/src/app/setup-wizard/organization/` - сторінки Org Wizard.
-*   `apps/web/src/app/setup-wizard/user/` - сторінки User Wizard.
-*   `apps/web/src/components/wizard/user/` - компоненти кроків (AdaptiveStep, ProfileStep...).
-
-### 4. Adaptive Logic
-Використовувати `UserRole` або дані з `Invite` для визначення сценарію (Manager vs Employee).
-*   Якщо `Invite` має роль `MANAGER` -> Сценарій B.
-*   Якщо `Invite` має роль `EMPLOYEE` -> Сценарій A.
-*   Якщо `isFirstUser` (Admin) -> Сценарій C.
+#### [MODIFY] [MyReportPage.tsx](file:///c:/Users/yaros/.gemini/antigravity/playground/crystal-kuiper/apps/web/src/app/my-day/page.tsx)
+- Import `VoiceInput` and `parseDailyReport`.
+- Add `handleVoiceInput` function:
+  - Receives text from `VoiceInput`.
+  - Calls `parseDailyReport`.
+  - Merges the result into `reportState`.
+  - Shows a success toast ("Звіт заповнено з голосу").
+- Render `<VoiceInput />` at the end of the component (outside the main grid, fixed position).
 
 ## Verification Plan
 
-### Automated Tests
-1.  **Admin Flow**: Register -> Org Wizard -> User Wizard -> Dashboard.
-2.  **Employee Flow**: Invite Link -> Register -> User Wizard (Join Team) -> Dashboard.
-3.  **Manager Flow**: Invite Link -> Register -> User Wizard (Create Team) -> Dashboard.
-
 ### Manual Verification
-1.  Пройти шлях створення компанії.
-2.  Запросити працівника, пройти шлях працівника.
-3.  Запросити менеджера, пройти шлях менеджера.
+1.  **Open "My Day" Page**: Navigate to `/my-day`.
+2.  **Check UI**: Verify the Microphone FAB appears in the bottom-right.
+3.  **Test Interaction**:
+    - Click the FAB.
+    - Verify the "Listening" modal appears.
+    - "Speak" (click a "Simulate Voice" button in the mock UI or wait for a timeout).
+    - Verify "Processing" animation.
+4.  **Verify Data**:
+    - Check if the form fields (Yesterday, Today, Help) are populated with the mock data.
+    - Verify the toast message appears.
+5.  **Save**: Click "Save" and ensure the data persists (using the existing save logic).
