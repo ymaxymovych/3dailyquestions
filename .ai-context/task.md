@@ -3,19 +3,30 @@
 # Wizard Navigation & Architecture Implementation
 
 ## 📌 Current Focus (Short-Term Memory)
-*Last Updated: 2025-12-04T01:54:00+02:00*
+*Last Updated: 2025-12-04T02:17:00+02:00*
 
-**Immediate Goal**: Verify the fix for the Settings/Organization wizard integration and ensure the "Back" button works flawlessly.
+**Immediate Goal**: Fix "Next" button bug in Organization Wizard (`/setup-wizard/organization`).
 
 **Active Context** (files relevant to current task):
-- `apps/web/src/app/settings/organization/page.tsx`
+- `apps/web/src/app/setup-wizard/organization/page.tsx`
 - `apps/web/src/components/wizard/WizardBanner.tsx`
-- `apps/web/src/app/settings/layout.tsx`
+
+**Known Bug**:
+- **Location**: `/setup-wizard/organization`
+- **Issue**: "Next" button in `WizardBanner` not working
+- **Previous fixes in this session**:
+  - Added explicit `nextLabel` prop to ensure correct button text
+  - Fixed sidebar overlap with `lg:left-64`
+  - Added debug logging to console
+- **Next steps**: 
+  - Check browser console for `WizardBanner:` logs
+  - Verify `handleNext` function is being called
+  - Check if `currentStep` is updating in database
 
 **Recent Decisions / Notes**:
-- Removed broken `WizardBanner` from global `SettingsLayout` (it had no props, causing errors).
-- Integrated `WizardBanner` directly into `OrganizationSettingsPage` with proper wizard mode detection (`wizard=true` query param).
-- Created comprehensive `.ai-context` structure for project migration and context portability.
+- Removed broken `WizardBanner` from global `SettingsLayout`.
+- Integrated `WizardBanner` directly into `OrganizationSettingsPage` with wizard mode detection.
+- Created comprehensive `.ai-context` structure for project portability.
 
 ## Phase 1: Create WizardBanner Component
 - [x] Create `WizardBanner` component in `components/wizard/`
