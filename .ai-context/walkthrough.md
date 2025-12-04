@@ -1,68 +1,58 @@
-# Email UI Integration Walkthrough
+# Knowledge Base Admin — Walkthrough
 
-## Summary
-Інтегровано Email Admin Panel з `ai-advisory-admin/` в основний Next.js проект.
+## Overview
+We have successfully implemented the Knowledge Base Admin system, integrated it with the existing Role Archetype system, and created a seamless experience for both Team Leads (Admin) and Employees.
 
-## What Was Done
+## Features Implemented
 
-### 1. Database Layer
-- **Schema**: Added 3 models to `packages/database/prisma/schema.prisma`:
-  - `EmailTemplate` — stores templates with multi-language support (JSON)
-  - `EmailLog` — tracks sent emails
-  - `Subscriber` — newsletter subscribers
-  - `EmailCategory` enum (ACCESS, ONBOARDING, LEGAL, MARKETING)
-- **Migration**: `20251204063533_add_email_system` — creates 3 tables.
-- **Seed Script**: `prisma/seed/seed-emails.ts` — 14 templates (UA/EN).
+### 1. Database Schema
+- **`KnowledgeDocument`**: Stores policies, SOPs, and job descriptions.
+- **`DocumentAcknowledgment`**: Tracks who has read which document.
+- **`DocumentComment`**: Allows Q&A on documents.
+- **Integration**: Linked to `Department`, `Team`, `JobRole`, and `User`.
+- **Cleanup**: Removed duplicate `KPICatalogItem` model in favor of existing `KPITemplate`.
 
 ### 2. API Routes
-| Route | Methods | Description |
-|-------|---------|-------------|
-| `/api/email-templates` | GET, POST | List/create templates |
-| `/api/email-templates/[id]` | GET, PUT, DELETE | Single template CRUD |
-| `/api/email-templates/[id]/test` | POST | Send test email (mock) |
-| `/api/email-logs` | GET, POST | Logs + stats |
+- **`/api/knowledge-documents`**: Full CRUD with filtering and search.
+- **`/api/knowledge-documents/[id]/acknowledge`**: Endpoint for employees to mark documents as read.
+- **`/api/ai/scaffold-document`**: Generates document structure based on type and role (currently using templates, ready for LLM).
 
-### 3. Frontend Pages
-All under `/settings/emails/`:
-- **Dashboard** — Stats cards, chart placeholders
-- **Templates** — List with category filter, search, toggle
-- **Template Editor** — UA/EN tabs, Markdown, preview, test modal
-- **Logs** — Paginated table with status badges
-- **Subscribers** — Mock data list
-- **Settings** — Sender config, quiet hours
+### 3. Team Lead UI (Admin)
+Located at `/settings/knowledge`.
+- **Hub Page**: Central access to Documents and Role Archetypes.
+- **Document List**: Filter by Level (Company, Dept, Team, Role) and Status.
+- **Document Editor**:
+  - Markdown support with live preview.
+  - **AI Scaffold**: "Magic wand" button to generate initial content.
+  - **Versioning**: Auto-increments version on edit.
+  - **Comments**: View questions from employees.
 
-### 4. Navigation
-- Added "Email Templates" to Settings sidebar (`/settings/page.tsx`)
+### 4. Employee UI
+Located at `/my-day/knowledge`.
+- **Job Role Card**: Displays mission and responsibilities.
+- **KPI Dashboard**: Shows KPIs from the user's **Role Archetype** with traffic light status (Green/Yellow/Red).
+- **Required Reading**: Prominent section for unread documents with "Acknowledge" button.
+- **Document Library**: Access to all relevant company/department/role documents.
 
-## How to Test
+## Verification Steps
 
-1. **Seed the database** (if not done):
-   ```bash
-   cd packages/database
-   npx ts-node prisma/seed/seed-emails.ts
-   ```
+### 1. Create a Document (Team Lead)
+1. Go to `/settings/knowledge/documents/new`.
+2. Select Type: "Job Description", Level: "Role".
+3. Click **"🤖 Generate Template"** to see the AI scaffold in action.
+4. Edit content and click **"Save"**.
+5. Change status to **"Published"** and save again.
 
-2. **Run dev server**:
-   ```bash
-   npm run dev
-   ```
+### 2. View as Employee
+1. Go to `/my-day/knowledge`.
+2. You should see the new document in "Required Reading".
+3. Click **"Acknowledge"** (Ознайомився).
+4. The document should move to the "My Instructions" list with a green checkmark.
 
-3. **Navigate to Email Admin**:
-   - Go to `/settings` → AI Advisory Board → Email Templates
-   - Or directly: `http://localhost:3000/settings/emails`
+### 3. Check KPIs
+1. Ensure your user has a Job Role assigned that is linked to an Archetype with KPIs.
+2. On `/my-day/knowledge`, verify that "My KPIs" cards are displayed with mock data.
 
-4. **Verify**:
-   - Dashboard loads with stats
-   - Templates list shows 14 items
-   - Click on a template → Editor opens
-   - Switch UA/EN → content changes
-   - Click Preview tab → Markdown renders
-   - Click "Send Test" → Modal opens
-
-## Files Changed
-- `packages/database/prisma/schema.prisma` — Added 3 models
-- `packages/database/prisma/seed/seed-emails.ts` — NEW
-- `apps/web/src/app/api/email-templates/` — NEW (4 files)
-- `apps/web/src/app/api/email-logs/route.ts` — NEW
-- `apps/web/src/app/settings/emails/` — NEW (7 files)
-- `apps/web/src/app/settings/page.tsx` — Added navigation
+## Next Steps
+- **Real AI**: Connect `/api/ai/scaffold-document` to OpenAI/Anthropic for dynamic generation.
+- **Real KPI Data**: Replace mock values in `MyKnowledgePage` with actual daily report aggregations.

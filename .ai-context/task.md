@@ -1,15 +1,24 @@
 # Crystal Kuiper Task Tracker
 
 ## 📌 Current Focus (Short-Term Memory)
-*Last Updated: 2025-12-04T09:06:00+02:00*
+*Last Updated: 2025-12-04T10:15:00+02:00*
 
-**Immediate Goal**: Test Email Admin UI locally → Real AI Integration (Whisper) OR User Profile Timeline.
+**Immediate Goal**: Real AI Integration (Whisper) OR User Profile Timeline.
 
 **Active Context** (files relevant to current task):
-- `apps/web/src/app/settings/emails/` — email admin pages (6 pages)
-- `.ai-context/BACKLOG.md` — оновлено з 50+ email ideas
+- `apps/web/src/app/settings/knowledge/` — Knowledge Base Admin
+- `apps/web/src/app/my-day/knowledge/` — Employee Knowledge View
+- `.ai-context/BACKLOG.md` — Updated with Knowledge Base ideas
 
 ## Completed Tasks
+- [x] **Knowledge Base Admin System** <!-- id: 26 -->
+    - [x] Database: `KnowledgeDocument`, `DocumentAcknowledgment`, `DocumentComment`
+    - [x] API: CRUD for documents, comments, acknowledgments
+    - [x] UI (Team Lead): Hub, Document List, Editor with Markdown & AI Scaffold
+    - [x] UI (Employee): "My Knowledge" page with Role Card & KPI Dashboard
+    - [x] Integration: Connected to existing `RoleArchetype` & `KPITemplate` system
+    - [x] Cleanup: Removed duplicate `KPICatalogItem` model
+    - [x] Build passes ✅
 - [x] **Email Admin UI Integration** <!-- id: 25 -->
     - [x] Prisma models (`EmailTemplate`, `EmailLog`, `Subscriber`)
     - [x] Seed script with 14 templates (UA/EN)
@@ -24,26 +33,20 @@
 - [x] **Voice Recognition Settings**: STT Provider options in AI Config
 
 ## Pending Tasks
-- [ ] **Test Email Admin UI**: Navigate to `/settings/emails/` locally
 - [ ] **Real AI Integration**: Connect OpenAI Whisper API <!-- id: 11 -->
 - [ ] **Super Admin**: User Profile page (Timeline, Debug) <!-- id: 23 -->
 - [ ] **Email Provider**: Integrate Resend API for real sending
 
 ## Recent Decisions / Notes
 
+### 2025-12-04 (10:15): Knowledge Base Complete 📚
+- **Architecture**: Integrated with existing `RoleArchetype` system for KPIs. Removed duplicate `KPICatalogItem`.
+- **UI**: Created separate views for Team Leads (Settings) and Employees (My Day).
+- **AI**: Added "Scaffold" button in editor (currently uses templates, ready for LLM).
+
 ### 2025-12-04 (09:06): Session Complete 📧
 - **Email UI**: Fully integrated with 14 templates seeded to DB.
-- **BACKLOG Updated**: Added 50+ email improvement ideas:
-  - 10 System Improvements (Queue, A/B Testing, Visual Builder)
-  - 6 Use Cases (Reminders, Digests, Streaks, Re-engagement)
-  - 13 Edge Cases (Bounce, Rate Limiting, Timezone, GDPR)
-  - 8 Metrics/KPIs (Delivery, Open, Click rates with targets)
-  - 6 Automation Flows (Onboarding, Trial-to-Paid, Streaks)
-
-### 2025-12-04 (08:44): Email UI Integration Complete
-- Database: 3 models + EmailCategory enum
-- Template Editor: UA/EN tabs, Markdown, preview, test send modal
-- API: Uses `@repo/database` + mock auth pattern
+- **BACKLOG Updated**: Added 50+ email improvement ideas.
 
 ## Known Issues / TODOs
 - [ ] Voice input uses mock simulation (not real STT)

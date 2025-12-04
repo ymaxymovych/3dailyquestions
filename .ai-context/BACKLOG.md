@@ -110,7 +110,10 @@
   - 5 days → Badge 🥉 → 10 days → Badge 🥈 → 30 days → Badge 🥇 → 100 days → Special 🏆
 
 - [ ] **Knowledge Base**:
-  - [ ] Role definitions & KPI sets (JSON-based for MVP).
+  - [ ] **Real AI Scaffold**: Connect `/api/ai/scaffold-document` to OpenAI for dynamic generation.
+  - [ ] **Real KPI Data**: Replace mock values in `MyKnowledgePage` with actual daily report aggregations.
+  - [ ] **Document Search**: Full-text search for documents content.
+  - [ ] **Read Receipts**: Admin view of who read what.
 - [ ] **Integrations**:
   - [ ] Google Calendar Sync.
   - [ ] Slack Bot.
