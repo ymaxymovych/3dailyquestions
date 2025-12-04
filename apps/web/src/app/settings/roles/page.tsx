@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,7 +59,7 @@ interface JobRole {
     };
 }
 
-export default function RolesPage() {
+function RolesPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const isWizardMode = searchParams.get('wizard') === 'true';
@@ -412,5 +412,17 @@ export default function RolesPage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function RolesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-96">
+                <div className="text-muted-foreground">Loading job roles...</div>
+            </div>
+        }>
+            <RolesPageContent />
+        </Suspense>
     );
 }

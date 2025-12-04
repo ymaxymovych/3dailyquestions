@@ -1,67 +1,79 @@
-# Wizard Navigation & Architecture Implementation
-
-# Wizard Navigation & Architecture Implementation
+# Onboarding Strategy Implementation: "Divide and Adapt"
 
 ## 📌 Current Focus (Short-Term Memory)
-*Last Updated: 2025-12-04T02:17:00+02:00*
+*Last Updated: 2025-12-04T04:54:00+02:00*
 
-**Immediate Goal**: Fix "Next" button bug in Organization Wizard (`/setup-wizard/organization`).
+**Immediate Goal**: Manual testing of the implemented wizards flows (Admin, Manager, Employee).
 
 **Active Context** (files relevant to current task):
 - `apps/web/src/app/setup-wizard/organization/page.tsx`
-- `apps/web/src/components/wizard/WizardBanner.tsx`
+- `apps/web/src/app/setup-wizard/user/page.tsx`
+- `apps/web/src/app/setup-wizard/page.tsx`
+- `apps/web/src/components/wizard/user/`
 
-**Known Bug**:
-- **Location**: `/setup-wizard/organization`
-- **Issue**: "Next" button in `WizardBanner` not working
-- **Previous fixes in this session**:
-  - Added explicit `nextLabel` prop to ensure correct button text
-  - Fixed sidebar overlap with `lg:left-64`
-  - Added debug logging to console
-- **Next steps**: 
-  - Check browser console for `WizardBanner:` logs
-  - Verify `handleNext` function is being called
-  - Check if `currentStep` is updating in database
+**Strategy**: "Divide and Adapt" ✅ **IMPLEMENTED**
+1.  **Organization Wizard**: Company setup (Admin only) - ✅ Done
+2.  **User Wizard**: Adaptive for everyone - ✅ Done
+    -   **Employee**: Join Team
+    -   **Manager**: Create/Manage Team
+    -   **Admin**: Personal profile setup
 
-**Recent Decisions / Notes**:
-- Removed broken `WizardBanner` from global `SettingsLayout`.
-- Integrated `WizardBanner` directly into `OrganizationSettingsPage` with wizard mode detection.
-- Created comprehensive `.ai-context` structure for project portability.
+## Phase 1: Plan & Schema
+- [x] Analyze Database Schema for Roles/Teams
+- [x] Define "Divide and Adapt" Strategy
+- [x] Update `implementation_plan.md` with detailed flows
+- [x] Verify Prisma Schema matches requirements (User fields)
 
-## Phase 1: Create WizardBanner Component
-- [x] Create `WizardBanner` component in `components/wizard/`
-- [x] Add Progress bar component
-- [x] Add Back/Next buttons with proper styling
-- [x] Add icons (ArrowLeft, ArrowRight, Check)
-- [x] Export from index
+## Phase 2: Organization Wizard (Refinement)
+- [x] Rename/Move existing wizard to `/setup-wizard/organization`
+- [x] Ensure it ONLY handles Org data (Departments, Schedule, AI)
+- [x] Remove Personal steps (Job Role) from Org Wizard
+- [x] Update API `api/setup/organization/status`
+- [x] Create API routes for settings and AI policy
 
-## Phase 2: Update Organization Wizard
-- [x] Integrate `WizardBanner` into organization wizard
-- [x] Remove duplicate "Next" buttons from step content
-- [x] Add step names array for banner
-- [x] Handle Back button navigation
-- [x] Update progress tracking
-- [x] Hide banner "Next" on WizardJobRoleStep (has own button)
-- [x] Fix WizardBanner integration in Settings/Organization page (Custom Flow)
+## Phase 3: User Wizard (New & Adaptive)
+- [x] Create `/setup-wizard/user` structure
+- [x] Implement **Welcome & Profile** step
+- [x] Implement **Adaptive Team Step**:
+    - [x] Logic: If Manager -> Show "Create Team" / "Manage Team"
+    - [x] Logic: If Employee -> Show "Join Team" (Select from list)
+- [x] Implement **Preferences** step
+- [x] Update API `api/setup/user/status`
+- [x] Create all API routes (teams, profile, preferences)
 
-## Phase 3: Update User Wizard
-- [x] Integrate `WizardBanner` into user wizard
-- [x] Remove duplicate "Next" buttons
-- [x] Add step names array
-- [x] Handle Back button navigation
-- [x] Update progress tracking
-- [x] Hide banner "Next" on WizardJobRoleStep
+## Phase 4: Routing & Gatekeeper
+- [x] Update `middleware` or `AuthContext` to handle redirects
+    - *Implemented via Smart Redirector page `/setup-wizard/page.tsx`*
+- [x] Logic: First User -> Org Wizard -> User Wizard
+- [x] Logic: Invited User -> User Wizard
+- [x] Logic: Existing User (new feature) -> Dashboard (or optional wizard)
 
-## Phase 4: Testing & Verification
-- [x] Test Organization wizard navigation
-- [x] Test User wizard navigation
-- [x] Verify no duplicate buttons
-- [x] Test Back button on all steps
-- [x] Test progress bar accuracy
-- [x] Verify accessibility (keyboard navigation)
+## Phase 5: Verification
+- [x] Run Build & Lint Checks ✅ **Build successful!**
+- [ ] Test Admin Flow (New Company)
+- [ ] Test Manager Flow (Head/Team Lead)
+- [ ] Test Employee Flow (Join existing)
 
-## Phase 5: Fix WizardBanner on Settings Pages
-- [x] Integrate `WizardBanner` into `/settings/company`
-- [x] Integrate `WizardBanner` into `/settings/roles`
-- [x] Verify navigation flow between settings pages in wizard mode
-- [x] Ensure banner does not appear in normal settings mode
+## Recent Decisions / Notes
+
+### 2025-12-04: Complete Implementation & Build Fixes
+- ✅ Successfully implemented Organization Wizard (6 steps)
+- ✅ Successfully implemented User Wizard with adaptive logic (5 steps)
+- ✅ Created all necessary API routes for wizards
+- ✅ Fixed build errors:
+  - Updated `User` interface in AuthContext (added `departmentId`, `image`, `profile`)
+  - Fixed `/api/user/preferences` to use `workSchedule` JSON field
+  - Added Suspense boundaries to settings pages using `useSearchParams()`
+- 🎯 **Build Status**: Passing (all TypeScript errors resolved)
+
+### Next Steps
+1. Manual testing of wizard flows
+2. Test edge cases (skip, navigation, errors)
+3. Consider adding middleware for automatic wizard redirects
+4. Possibly implement invite email system for new users
+
+## Known Issues / TODOs
+- [ ] User role detection logic in User Wizard is simplified (uses `roles` array)
+- [ ] Need to implement proper middleware for wizard gatekeeper logic
+- [ ] API routes created but not all backend DTO validation implemented
+- [ ] TeamStep needs department selection if user doesn't have departmentId yet

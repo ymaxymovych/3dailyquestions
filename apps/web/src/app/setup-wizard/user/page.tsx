@@ -4,22 +4,22 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-    ArrowLeft,
-    ArrowRight,
     Check,
     User,
-    Briefcase,
+    Users,
     Settings,
     Sparkles,
     Home,
-    AlertCircle,
     Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { WizardJobRoleStep } from '@/components/wizard/WizardJobRoleStep';
 import { WizardBanner } from '@/components/wizard/WizardBanner';
+import { BasicInfoStep } from '@/components/wizard/user/BasicInfoStep';
+import { TeamStep } from '@/components/wizard/user/TeamStep';
+import { PreferencesStep } from '@/components/wizard/user/PreferencesStep';
+import { useAuth } from '@/context/AuthContext';
+import wizardApi from '@/lib/wizardApi';
 
 // Types
 interface WizardStep {
@@ -27,11 +27,6 @@ interface WizardStep {
     title: string;
     description: string;
     icon: React.ElementType;
-}
-
-interface Router {
-    push: (path: string) => void;
-    replace: (path: string, options?: { scroll?: boolean }) => void;
 }
 
 const WIZARD_STEPS: WizardStep[] = [
@@ -48,15 +43,15 @@ const WIZARD_STEPS: WizardStep[] = [
         icon: User,
     },
     {
-        id: 'job-role',
-        title: 'Job Role',
-        description: 'Select your role and department',
-        icon: Briefcase,
+        id: 'team',
+        title: 'Team & Role',
+        description: 'Join or create your team',
+        icon: Users,
     },
     {
         id: 'preferences',
         title: 'Preferences',
-        description: 'Work preferences and notifications',
+        description: 'Work preferences',
         icon: Settings,
     },
     {
@@ -70,85 +65,55 @@ const WIZARD_STEPS: WizardStep[] = [
 const STEP_NAMES = [
     'Welcome',
     'Basic Information',
-    'Job Role Selection',
+    'Team Setup',
     'Work Preferences',
     'Setup Complete'
 ];
 
 function UserWizardContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const shouldAdvance = searchParams.get('advance') === 'true';
-    const shouldGoBack = searchParams.get('goBack') === 'true';
-    const fromStep = searchParams.get('fromStep');
+    const { user, refreshProfile } = useAuth();
 
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-    const [hasOrganizationStructure, setHasOrganizationStructure] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [userRole, setUserRole] = useState<'MANAGER' | 'EMPLOYEE' | 'ADMIN'>('EMPLOYEE');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchWizardState();
-        checkOrganizationStatus();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        const init = async () => {
+            if (!user) return;
 
-    const fetchWizardState = async () => {
-        try {
-            const response = await fetch('/api/setup/user/status');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.currentStep !== undefined) {
-                    let step = data.currentStep;
-
-                    // Auto-advance if requested
-                    if (shouldAdvance && step < WIZARD_STEPS.length - 1) {
-                        if (fromStep) {
-                            step = parseInt(fromStep);
-                        }
-                        step = step + 1;
-                        await saveStep(step);
-                        router.replace('/setup-wizard/user', { scroll: false });
-                    }
-
-                    // Go back if requested
-                    if (shouldGoBack && fromStep) {
-                        step = parseInt(fromStep) - 1;
-                        if (step >= 0) {
-                            await saveStep(step);
-                            router.replace('/setup-wizard/user', { scroll: false });
-                        }
-                    }
-
-                    setCurrentStep(step);
+            try {
+                // Fetch wizard state
+                const { data: status } = await wizardApi.get('/setup/user/status');
+                if (status.currentStep) {
+                    setCurrentStep(status.currentStep);
                 }
-            }
-        } catch (error) {
-            console.error('Failed to fetch wizard state:', error);
-        }
-    };
 
-    const checkOrganizationStatus = async () => {
-        try {
-            const response = await fetch('/api/setup/organization/status');
-            if (response.ok) {
-                const data = await response.json();
-                setHasOrganizationStructure(data.setup?.structureConfigured || false);
-                // Check if user is admin (simplified - check if user has ADMIN role)
-                // TODO: Implement proper admin check
-                setIsAdmin(false);
+                // Determine User Role Logic
+                // This should ideally come from the backend based on Invite or Roles
+                // For now, we'll check if they have 'MANAGER' role or are Admin
+                // TODO: Fetch real role from API
+                const isManager = user.roles?.includes('MANAGER') || false;
+                const isAdmin = user.roles?.includes('ADMIN') || false;
+
+                if (isAdmin) setUserRole('ADMIN');
+                else if (isManager) setUserRole('MANAGER');
+                else setUserRole('EMPLOYEE');
+
+            } catch (error) {
+                console.error('Failed to init user wizard', error);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Failed to check organization status:', error);
-        }
-    };
+        };
+
+        init();
+    }, [user]);
 
     const saveStep = async (step: number) => {
         try {
-            await fetch('/api/setup/user/status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ currentStep: step }),
-            });
+            await wizardApi.post('/setup/user/status', { currentStep: step });
         } catch (error) {
             console.error('Failed to save wizard progress:', error);
         }
@@ -163,6 +128,9 @@ function UserWizardContent() {
             const nextStep = currentStep + 1;
             setCurrentStep(nextStep);
             await saveStep(nextStep);
+        } else {
+            // Complete
+            await handleComplete();
         }
     };
 
@@ -174,11 +142,8 @@ function UserWizardContent() {
 
     const handleComplete = async () => {
         try {
-            await fetch('/api/setup/user/status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ completed: true }),
-            });
+            await wizardApi.post('/setup/user/status', { completed: true });
+            await refreshProfile();
             router.push('/my-day');
         } catch (error) {
             console.error('Failed to complete wizard:', error);
@@ -187,11 +152,7 @@ function UserWizardContent() {
 
     const handleSkip = async () => {
         try {
-            await fetch('/api/setup/user/status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ skipped: true }),
-            });
+            await wizardApi.post('/setup/user/status', { skipped: true });
             router.push('/my-day');
         } catch (error) {
             console.error('Failed to skip wizard:', error);
@@ -201,6 +162,14 @@ function UserWizardContent() {
     const progress = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
     const currentStepData = WIZARD_STEPS[currentStep];
     const Icon = currentStepData.icon;
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 dark:from-slate-950 dark:to-purple-950 p-4 md:p-8">
@@ -275,16 +244,7 @@ function UserWizardContent() {
 
                         {/* Step Content */}
                         <div className="min-h-[400px]">
-                            {
-                                renderStepContent(
-                                    currentStep,
-                                    router,
-                                    handleNext,
-                                    hasOrganizationStructure,
-                                    isAdmin,
-                                    handleSkip
-                                )
-                            }
+                            {renderStepContent(currentStep, handleNext, userRole, user?.departmentId)}
                         </div>
                     </CardContent>
                 </Card>
@@ -299,7 +259,7 @@ function UserWizardContent() {
                 onNext={currentStep === WIZARD_STEPS.length - 1 ? handleComplete : handleNext}
                 onBack={handlePrevious}
                 onSkip={handleSkip}
-                hideNext={currentStep === 2} // Hide Next for Job Role step as it has its own control
+                hideNext={currentStep === 1 || currentStep === 2 || currentStep === 3} // Hide next for steps with internal forms
                 hideBack={currentStep === 0}
                 nextLabel={currentStep === WIZARD_STEPS.length - 1 ? 'Complete Setup' : 'Next'}
             />
@@ -309,11 +269,9 @@ function UserWizardContent() {
 
 function renderStepContent(
     step: number,
-    router: Router,
     handleNext: () => void,
-    hasOrganizationStructure: boolean,
-    isAdmin: boolean,
-    handleSkip: () => void
+    userRole: 'MANAGER' | 'EMPLOYEE' | 'ADMIN',
+    departmentId?: string | null
 ) {
     switch (step) {
         case 0:
@@ -322,12 +280,10 @@ function renderStepContent(
             return <BasicInfoStep onComplete={handleNext} />;
         case 2:
             return (
-                <JobRoleStepWrapper
+                <TeamStep
+                    userRole={userRole}
+                    departmentId={departmentId || undefined}
                     onComplete={handleNext}
-                    hasOrganizationStructure={hasOrganizationStructure}
-                    isAdmin={isAdmin}
-                    router={router}
-                    handleSkip={handleSkip}
                 />
             );
         case 3:
@@ -341,113 +297,27 @@ function renderStepContent(
 
 function WelcomeStep() {
     return (
-        <div className="prose dark:prose-invert max-w-none">
+        <div className="prose dark:prose-invert max-w-none text-center py-8">
             <h3>Welcome! Let&apos;s Set Up Your Profile</h3>
             <p>
                 This quick setup will help personalize your experience and enable AI-powered
                 features tailored to your role.
             </p>
-            <h4>What you&apos;ll configure:</h4>
-            <ul>
-                <li><strong>Basic Info:</strong> Your profile details</li>
-                <li><strong>Job Role:</strong> Your department and role for personalized KPIs</li>
-                <li><strong>Preferences:</strong> Notification and work settings</li>
-            </ul>
-            <p className="text-muted-foreground">
-                This should only take a few minutes. You can skip any step and complete it later.
-            </p>
-        </div>
-    );
-}
-
-function BasicInfoStep({ onComplete }: { onComplete: () => void }) {
-    return (
-        <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-full">
-                <User className="h-12 w-12 text-purple-500" />
-            </div>
-            <div>
-                <h3 className="text-xl font-semibold mb-2">Basic Information</h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                    Your basic profile is set up from registration. You can update it in Settings.
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function JobRoleStepWrapper({
-    onComplete,
-    hasOrganizationStructure,
-    isAdmin,
-    router,
-    handleSkip,
-}: {
-    onComplete: () => void;
-    hasOrganizationStructure: boolean;
-    isAdmin: boolean;
-    router: Router;
-    handleSkip: () => void;
-}) {
-    if (!hasOrganizationStructure) {
-        return (
-            <div className="space-y-6">
-                <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Organization Structure Not Set Up</AlertTitle>
-                    <AlertDescription>
-                        {isAdmin ? (
-                            <div className="space-y-4">
-                                <p>
-                                    Your organization structure hasn&apos;t been configured yet.
-                                    Would you like to set it up now?
-                                </p>
-                                <div className="flex gap-3">
-                                    <Button
-                                        onClick={() => router.push('/setup-wizard/organization')}
-                                        size="sm"
-                                    >
-                                        Set Up Organization
-                                    </Button>
-                                    <Button variant="outline" onClick={handleSkip} size="sm">
-                                        Skip for Now
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <p>
-                                    Your organization is still being set up. You can select a general
-                                    role type for now, or skip and complete this later.
-                                </p>
-                                <Button variant="outline" onClick={handleSkip} size="sm">
-                                    Skip for Now
-                                </Button>
-                            </div>
-                        )}
-                    </AlertDescription>
-                </Alert>
-                <WizardJobRoleStep onComplete={onComplete} />
-            </div>
-        );
-    }
-
-    return <WizardJobRoleStep onComplete={onComplete} />;
-}
-
-function PreferencesStep({ onComplete }: { onComplete: () => void }) {
-    return (
-        <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-full">
-                <Settings className="h-12 w-12 text-purple-500" />
-            </div>
-            <div>
-                <h3 className="text-xl font-semibold mb-2">Work Preferences</h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                    You can configure notifications and work hours in Settings → Personal.
-                </p>
-                <div className="flex gap-3 justify-center">
-                    {/* Controls moved to banner */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left max-w-2xl mx-auto mt-8">
+                <div className="p-4 border rounded-lg bg-slate-50">
+                    <User className="w-6 h-6 text-blue-500 mb-2" />
+                    <h4 className="font-semibold m-0">Profile</h4>
+                    <p className="text-sm text-muted-foreground m-0">Basic info & photo</p>
+                </div>
+                <div className="p-4 border rounded-lg bg-slate-50">
+                    <Users className="w-6 h-6 text-purple-500 mb-2" />
+                    <h4 className="font-semibold m-0">Team</h4>
+                    <p className="text-sm text-muted-foreground m-0">Join or create team</p>
+                </div>
+                <div className="p-4 border rounded-lg bg-slate-50">
+                    <Settings className="w-6 h-6 text-green-500 mb-2" />
+                    <h4 className="font-semibold m-0">Preferences</h4>
+                    <p className="text-sm text-muted-foreground m-0">Work hours & alerts</p>
                 </div>
             </div>
         </div>

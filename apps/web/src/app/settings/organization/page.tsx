@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -133,7 +133,7 @@ function DepartmentCreationFlow({
     );
 }
 
-export default function OrganizationPage() {
+function OrganizationPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const isWizardMode = searchParams.get('wizard') === 'true';
@@ -660,5 +660,17 @@ export default function OrganizationPage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function OrganizationPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-96">
+                <div className="text-muted-foreground">Loading organization structure...</div>
+            </div>
+        }>
+            <OrganizationPageContent />
+        </Suspense>
     );
 }

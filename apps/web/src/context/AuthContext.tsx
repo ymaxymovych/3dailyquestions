@@ -9,8 +9,14 @@ interface User {
     email: string;
     fullName: string;
     orgId: string;
+    departmentId?: string | null;
     roles: string[];
     status?: 'ACTIVE' | 'PENDING' | 'BLOCKED';
+    image?: string;
+    profile?: {
+        bio?: string;
+        jobTitle?: string;
+    };
 }
 
 interface AuthContextType {
