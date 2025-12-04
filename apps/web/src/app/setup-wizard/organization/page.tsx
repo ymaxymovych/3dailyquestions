@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Users, Target, Settings, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '@/lib/api';
+import wizardApi from '@/lib/wizardApi';
 import { useAuth } from '@/context/AuthContext';
 import { WizardBanner } from '@/components/wizard/WizardBanner';
 
@@ -78,13 +78,13 @@ function OrganizationWizardContent() {
 
             try {
                 // Fetch existing setup status
-                const { data: setup } = await api.get('/setup/organization/status');
+                const { data: setup } = await wizardApi.get('/setup/organization/status');
                 if (setup.setup?.orgCurrentStep) {
                     setCurrentStep(setup.setup.orgCurrentStep);
                 }
 
                 // Fetch org details if they exist
-                const { data: org } = await api.get(`/organization`);
+                const { data: org } = await wizardApi.get(`/organization`);
                 setFormData(prev => ({
                     ...prev,
                     name: org.name || '',
@@ -112,10 +112,10 @@ function OrganizationWizardContent() {
             if (currentStep < WIZARD_STEPS.length) {
                 const nextStep = currentStep + 1;
                 setCurrentStep(nextStep);
-                await api.post('/setup/organization/status', { orgCurrentStep: nextStep });
+                await wizardApi.post('/setup/organization/status', { orgCurrentStep: nextStep });
             } else {
                 // Complete wizard
-                await api.post('/setup/organization/status', { orgWizardCompleted: true });
+                await wizardApi.post('/setup/organization/status', { orgWizardCompleted: true });
                 await refreshProfile();
                 toast.success('Setup completed successfully!');
                 router.push('/dashboard/manager');
@@ -131,7 +131,7 @@ function OrganizationWizardContent() {
     const saveStepData = async (step: number) => {
         switch (step) {
             case 1:
-                await api.patch(`/organization`, {
+                await wizardApi.patch(`/organization`, {
                     name: formData.name,
                     // other fields
                 });

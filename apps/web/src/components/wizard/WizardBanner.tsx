@@ -39,8 +39,11 @@ export function WizardBanner({
     // Auto-detect label based on step
     const buttonLabel = nextLabel || (isLastStep ? "Finish" : "Next");
 
-    // Debug logging
-    console.log('WizardBanner:', { currentStep, totalSteps, isLastStep, isFirstStep, buttonLabel });
+    const handleNextClick = () => {
+        if (onNext) {
+            onNext();
+        }
+    };
 
     return (
         <div className={cn(
@@ -78,7 +81,7 @@ export function WizardBanner({
                     {/* Next Button */}
                     {!hideNext ? (
                         <Button
-                            onClick={onNext}
+                            onClick={handleNextClick}
                             disabled={nextDisabled}
                             className="min-w-[100px]"
                         >

@@ -24,6 +24,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Briefcase, Plus, Pencil, Trash2, Users as UsersIcon } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { WizardBanner } from '@/components/wizard/WizardBanner';
+import wizardApi from '@/lib/wizardApi';
 
 interface Archetype {
     id: string;
@@ -57,6 +60,10 @@ interface JobRole {
 }
 
 export default function RolesPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const isWizardMode = searchParams.get('wizard') === 'true';
+
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [jobRoles, setJobRoles] = useState<JobRole[]>([]);
@@ -382,6 +389,28 @@ export default function RolesPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {isWizardMode && (
+                <WizardBanner
+                    currentStep={3}
+                    totalSteps={5}
+                    stepName="Job Roles"
+                    onNext={async () => {
+                        // Update status to move to next step
+                        try {
+                            await wizardApi.post('/setup/organization/status', { orgCurrentStep: 4 });
+                            // For now, redirect to dashboard as step 4 might not be ready or just finish
+                            // Assuming step 4 is Process/Routine
+                            router.push('/settings/routine?wizard=true&step=4');
+                        } catch (error) {
+                            console.error('Failed to update wizard status', error);
+                            router.push('/settings/routine?wizard=true&step=4');
+                        }
+                    }}
+                    onBack={() => router.push('/settings/organization?wizard=true&step=2')}
+                    className="lg:left-64"
+                />
+            )}
         </div>
     );
 }

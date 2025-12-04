@@ -27,7 +27,7 @@ import { Building2, Users, Plus, Pencil, Trash2, UserCircle } from 'lucide-react
 import { WizardOrganizationStep } from '@/components/wizard/WizardOrganizationStep';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { WizardBanner } from '@/components/wizard/WizardBanner';
-import api from '@/lib/api';
+import wizardApi from '@/lib/wizardApi';
 
 interface Department {
     id: string;
@@ -647,12 +647,12 @@ export default function OrganizationPage() {
                     onNext={async () => {
                         try {
                             // Update status to move to next step
-                            await api.post('/setup/organization/status', { orgCurrentStep: 3 });
-                            router.push('/setup-wizard/organization');
+                            await wizardApi.post('/setup/organization/status', { orgCurrentStep: 3 });
+                            router.push('/settings/roles?wizard=true&step=3');
                         } catch (error) {
                             console.error('Failed to update wizard status', error);
                             // Fallback redirect
-                            router.push('/setup-wizard/organization');
+                            router.push('/settings/roles?wizard=true&step=3');
                         }
                     }}
                     onBack={() => router.push('/setup-wizard/organization')}

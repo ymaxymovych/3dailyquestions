@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, Clock, Brain, Save } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { WizardBanner } from '@/components/wizard/WizardBanner';
+import wizardApi from '@/lib/wizardApi';
 
 interface OrganizationSettings {
     timezone?: string;
@@ -66,6 +69,10 @@ const WEEKDAYS = [
 ];
 
 export default function CompanySettingsPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const isWizardMode = searchParams.get('wizard') === 'true';
+
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -370,6 +377,27 @@ export default function CompanySettingsPage() {
                     {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
             </div>
+
+            {isWizardMode && (
+                <WizardBanner
+                    currentStep={1}
+                    totalSteps={5}
+                    stepName="Company Profile"
+                    onNext={async () => {
+                        await handleSave();
+                        // Update status to move to next step
+                        try {
+                            await wizardApi.post('/setup/organization/status', { orgCurrentStep: 2 });
+                            router.push('/settings/organization?wizard=true&step=2');
+                        } catch (error) {
+                            console.error('Failed to update wizard status', error);
+                            router.push('/settings/organization?wizard=true&step=2');
+                        }
+                    }}
+                    onBack={() => router.push('/setup-wizard/organization')}
+                    className="lg:left-64"
+                />
+            )}
         </div>
     );
 }

@@ -59,3 +59,9 @@
 - [x] Test Back button on all steps
 - [x] Test progress bar accuracy
 - [x] Verify accessibility (keyboard navigation)
+
+## Phase 5: Fix WizardBanner on Settings Pages
+- [x] Integrate `WizardBanner` into `/settings/company`
+- [x] Integrate `WizardBanner` into `/settings/roles`
+- [x] Verify navigation flow between settings pages in wizard mode
+- [x] Ensure banner does not appear in normal settings mode
